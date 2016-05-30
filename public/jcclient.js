@@ -29,6 +29,7 @@
         request.send(null);
     }
 
+    // A list of all mutually-exclusive elements (only one is visible at a time):
     var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv'];
 
     function SetActiveDiv(activeDivId) {
@@ -100,6 +101,25 @@
         return {'W':'WhitelistedCall', 'B':'BlockedCall'}[status] || 'NormalCall';
     }
 
+    function ZeroPad(n) {
+        var s = '' + n;
+        while (s.length < 2) {
+            s = '0' + s;
+        }
+        return s;
+    }
+
+    function FormatCurrentDateTime() {
+        var now = new Date();
+        var text = '' + now.getFullYear();
+        text += '-' + ZeroPad(now.getMonth() + 1);
+        text += '-' + ZeroPad(now.getDate());
+        text += ' ' + ZeroPad(now.getHours());
+        text += ':' + ZeroPad(now.getMinutes());
+        text += ':' + ZeroPad(now.getSeconds());
+        return text;
+    }
+
     function PopulateCallHistory(recent) {
         var table = document.createElement('table');
         table.setAttribute('class', 'RecentCallTable');
@@ -141,13 +161,25 @@
         table.appendChild(thead);
         table.appendChild(tbody);
 
+        // Now create a refresh button to sit above the table.
+        // <div class="NavSection">
+        //    <span class="CurrentDateTime">yyyy-mm-dd hh:mm:ss</span>
+        // </div>
+        var refreshDiv = document.createElement('div');
+        refreshDiv.className = 'NavSection CurrentDateTime';
+        var dateTimeSpan = document.createElement('span');
+        dateTimeSpan.textContent = FormatCurrentDateTime();
+        dateTimeSpan.onclick = RefreshCallHistory;
+        refreshDiv.appendChild(dateTimeSpan);
+
         // Remove existing children from RecentCallsDiv.
         var rcdiv = document.getElementById('RecentCallsDiv');
         while (rcdiv.firstChild) {
             rcdiv.removeChild(rcdiv.firstChild);
         }
 
-        // Substitute the new table as the child.
+        // Fill in newly-generted content for the RecentCallsDiv...
+        rcdiv.appendChild(refreshDiv);
         rcdiv.appendChild(table);
     }
 

@@ -43,3 +43,10 @@ td, th {
     font-size: x-large;
     font-family: monospace;
 }
+
+.CurrentDateTime {
+    font-size: large;
+    color: blue;
+    text-align: center;
+    font-family: monospace;
+}
