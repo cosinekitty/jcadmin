@@ -15,6 +15,8 @@
 
     function PopulateCallHistory(recent) {
         var table = document.createElement('table');
+        table.setAttribute('class', 'RecentCallTable');
+
         var thead = document.createElement('thead');
         var hrow = document.createElement('tr');
 
