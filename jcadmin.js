@@ -60,17 +60,15 @@ function ParseRecentCalls(text) {
     return calls;
 }
 
-app.get('/calls', (request, response) => {
+app.get('/api/calls', (request, response) => {
     var jcLogFile = jcpath + 'callerID.dat';
     fs.readFile(jcLogFile, 'utf8', (err, data) => {
-        var replyJson = { 'calls': ParseRecentCalls(data) };
+        var replyJson = err ? { 'error' : err } : { 'calls': ParseRecentCalls(data) };
         response.type('json');
         response.end(JSON.stringify(replyJson));
     });
 });
 
 const server = app.listen(port, () => {
-    var host = server.address().address;
-    var port = server.address().port;
     console.log('jcadmin server listening on port %s', port);
 });

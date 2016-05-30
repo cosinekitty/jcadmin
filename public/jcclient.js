@@ -13,6 +13,21 @@
         return recent;
     }
 
+    function CreatePhoneNumberCell(phonenumber) {
+        var numberCell = document.createElement('td');
+        if (true) {
+            numberCell.appendChild(document.createTextNode(phonenumber));
+        } else {
+            if (phonenumber !== "") {
+                var link = document.createElement('a');
+                link.setAttribute('href', '/phonenumber/' + encodeURIComponent(phonenumber));
+                link.appendChild(document.createTextNode(phonenumber));
+                numberCell.appendChild(link);
+            }
+        }
+        return numberCell;
+    }
+
     function PopulateCallHistory(recent) {
         var table = document.createElement('table');
         table.setAttribute('class', 'RecentCallTable');
@@ -42,9 +57,7 @@
             whenCell.appendChild(document.createTextNode(recent[i].when));
             row.appendChild(whenCell);
 
-            var numberCell = document.createElement('td');
-            numberCell.appendChild(document.createTextNode(recent[i].number));
-            row.appendChild(numberCell);
+            row.appendChild(CreatePhoneNumberCell(recent[i].number));
 
             var nameCell = document.createElement('td');
             nameCell.appendChild(document.createTextNode(recent[i].name));
@@ -81,22 +94,42 @@
         rcdiv.appendChild(table);
     }
 
-    function RequestCallHistory() {
+    function ApiGet(path, onSuccess, onFailure) {
         // https://developer.mozilla.org/en-US/docs/AJAX/Getting_Started
         var request = new XMLHttpRequest();
         request.onreadystatechange = function(){
             if (request.readyState === XMLHttpRequest.DONE) {
                 if (request.status === 200) {
-                    var calldata = JSON.parse(request.responseText);
-                    if (calldata && calldata.calls) {
-                        var recent = MostRecentCalls(calldata.calls, 20);
-                        PopulateCallHistory(recent);
+                    var responseJson = JSON.parse(request.responseText);
+                    if (!responseJson.error) {
+                        onSuccess && onSuccess(responseJson);
+                    } else {
+                        console.log('ApiGet returned error object for %s :', path);
+                        console.log(responseJson.error);
+                        onFailure && onFailure(request);
                     }
+                } else {
+                    console.log('ApiGet failure for %s :', path);
+                    console.log(request);
+                    onFailure && onFailure(request);
                 }
             }
         };
-        request.open('GET', '/calls');
+        request.open('GET', path);
         request.send(null);
+    }
+
+    function RequestCallHistory() {
+        ApiGet('/api/calls', function(calldata){
+            // on success
+            if (calldata.calls) {
+                var recent = MostRecentCalls(calldata.calls, 20);
+                PopulateCallHistory(recent);
+            }
+        },
+        function(request) {
+            // on failure
+        });
     }
 
     window.onload = function() {
