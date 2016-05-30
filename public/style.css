@@ -3,10 +3,6 @@ table {
     border-collapse: collapse;
 }
 
-tr:nth-of-type(odd) {
-    background: #dfd;
-}
-
 th {
     background: #333;
     color: white;
@@ -17,4 +13,16 @@ td, th {
     padding: 6px;
     border: 1px solid #ccc;
     text-align: left;
+}
+
+.WhitelistedCall {
+    background: #bfb;
+}
+
+.BlockedCall {
+    background: #fbb;
+}
+
+.NormalCall {
+    background: #eee;
 }

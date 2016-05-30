@@ -50,6 +50,21 @@
             nameCell.appendChild(document.createTextNode(recent[i].name));
             row.appendChild(nameCell);
 
+            // Set css class to indicate whether call was blocked, etc.
+            switch (recent[i].status) {
+                case 'B':
+                    row.setAttribute('class', 'BlockedCall');
+                    break;
+
+                case 'W':
+                    row.setAttribute('class', 'WhitelistedCall');
+                    break;
+
+                default:
+                    row.setAttribute('class', 'NormalCall');
+                    break;
+            }
+
             tbody.appendChild(row);
         }
 
