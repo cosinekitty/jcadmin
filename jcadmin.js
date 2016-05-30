@@ -48,22 +48,42 @@ function ParseCallLine(line) {
     return null;
 }
 
-function ParseRecentCalls(text) {
+function ParseRecentCalls(text, start, limit) {
     var lines = text.split('\n');
     var calls = [];
-    for (var i=0; i < lines.length; ++i) {
+    var total = 0;
+    for (var i = lines.length - 1; i >= 0; --i) {
         var c = ParseCallLine(lines[i]);
         if (c) {
-            calls.push(c);
+            if (total >= start && calls.length < limit) {
+                calls.push(c);
+            }
+            ++total;
         }
     }
-    return calls;
+
+    return {
+        'total': total,
+        'start': start,
+        'limit': limit,
+        'calls': calls
+    };
 }
 
-app.get('/api/calls', (request, response) => {
+function ParseIntParam(text, fallback) {
+    var value = parseInt(text);
+    if (isNaN(value)) {
+        return fallback;
+    }
+    return value;
+}
+
+app.get('/api/calls/:start/:limit', (request, response) => {
+    var start = ParseIntParam(request.params.start, 0);
+    var limit = ParseIntParam(request.params.limit, 1000000000);
     var jcLogFile = jcpath + 'callerID.dat';
     fs.readFile(jcLogFile, 'utf8', (err, data) => {
-        var replyJson = err ? { 'error' : err } : { 'calls': ParseRecentCalls(data) };
+        var replyJson = err ? { 'error' : err } : ParseRecentCalls(data, start, limit);
         response.type('json');
         response.end(JSON.stringify(replyJson));
     });

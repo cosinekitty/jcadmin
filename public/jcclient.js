@@ -120,12 +120,9 @@
     }
 
     function RequestCallHistory() {
-        ApiGet('/api/calls', function(calldata){
+        ApiGet('/api/calls/0/20', function(calldata){
             // on success
-            if (calldata.calls) {
-                var recent = MostRecentCalls(calldata.calls, 20);
-                PopulateCallHistory(recent);
-            }
+            PopulateCallHistory(calldata.calls);
         },
         function(request) {
             // on failure
