@@ -26,3 +26,20 @@ td, th {
 .NormalCall {
     background: #eee;
 }
+
+.NavButton {
+    font-size: x-large;
+    font-family: sans-serif;
+    color: blue;
+}
+
+.NavSection {
+    border-style: solid;
+    border-width: 20px;
+    border-color: transparent;
+}
+
+.TargetTable {
+    font-size: x-large;
+    font-family: monospace;
+}

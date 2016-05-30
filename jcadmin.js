@@ -89,6 +89,110 @@ app.get('/api/calls/:start/:limit', (request, response) => {
     });
 });
 
+function PhoneListContainsNumber(data, number) {
+    var lines = data.split('\n');
+    for (var i=0; i < lines.length; ++i) {
+        if (!lines[i].startsWith('#')) {
+            var limit = lines[i].indexOf('?');
+            if (limit < 0) limit = 19;
+            var entry = lines[i].substr(0, limit).trim();
+            if (number === entry) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+app.get('/api/number/:phonenumber', (request, response) => {
+    response.type('json');
+    var phonenumber = request.params.phonenumber;
+    var whiteListFileName = jcpath + 'whitelist.dat';
+    fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
+        if (werr) {
+            response.end(JSON.stringify({'error' : werr}));
+        } else {
+            // Search whitelist for phone number.
+            // If found, return immediately that the number is whitelisted.
+            if (PhoneListContainsNumber(wdata, phonenumber)) {
+                response.end(JSON.stringify({'status' : 'W'}));
+            } else {
+                // Search blacklist for the phone number.
+                // If found, the phone number is blocked, otherwise it is neither
+                // whitelisted nor blocked.
+                var blackListFileName = jcpath + 'blacklist.dat';
+                fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
+                    if (berr) {
+                        response.end(JSON.stringify({'error': berr}));
+                    } else {
+                        var blacklisted = PhoneListContainsNumber(bdata, phonenumber);
+                        response.end(JSON.stringify({
+                            'status' : blacklisted ? 'B' : '-'
+                        }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+function MakePhoneNumberRecord(phonenumber) {
+    if (phonenumber.length > 18) {
+        phonenumber = phonenumber.substring(0, 18);
+    }
+    var record = phonenumber + '?';
+    while (record.length < 19) {
+        record += ' ';
+    }
+    record += '++++++        Blocked by jcadmin\n';
+    return record;
+}
+
+app.get('/api/block/:phonenumber', (request, response) => {
+    var phonenumber = request.params.phonenumber;
+    console.log('Received request to block %s', phonenumber);
+
+    var whiteListFileName = jcpath + 'whitelist.dat';
+    fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
+        if (werr) {
+            response.end(JSON.stringify({'error' : werr}));
+        } else {
+            // Search whitelist for number. If present, fail the request.
+            if (PhoneListContainsNumber(wdata, phonenumber)) {
+                response.end(JSON.stringify({'error' : 'Refusing to block phone number because it is whitelisted.'}));
+            } else {
+                // Search blacklist for number. If absent, add it.
+                var blackListFileName = jcpath + 'blacklist.dat';
+                fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
+                    if (berr) {
+                        console.log('Blacklist file error');
+                        response.end(JSON.stringify({'error': berr}));
+                    } else {
+                        //console.log('Blacklist file success');
+                        if (PhoneListContainsNumber(bdata, phonenumber)) {
+                            // Already blacklisted, so immediately succeed.
+                            console.log('Already blacklisted');
+                            response.end(JSON.stringify({'status' : 'B'}));
+                        } else {
+                            // Append a new line to the blacklist file.
+                            var record = MakePhoneNumberRecord(phonenumber);
+                            fs.appendFile(blackListFileName, record, 'utf8', (aerr) => {
+                                if (aerr) {
+                                    console.log('Error appending to file!');
+                                    response.end(JSON.stringify({'error': aerr}));
+                                } else {
+                                    console.log('Appended record to blacklist');
+                                    response.end(JSON.stringify({'status' : 'B'}));
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
 const server = app.listen(port, () => {
     console.log('jcadmin server listening on port %s', port);
 });

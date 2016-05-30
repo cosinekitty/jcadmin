@@ -7,7 +7,33 @@
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="jcclient.js"></script>
 </head>
-<body>    
+<body>
     <div id="RecentCallsDiv"></div>
+
+    <div id="TargetCallDiv">
+        <div class="NavSection">
+            <span id="BackToListButton" class="NavButton">&laquo;Back</span>
+        </div>
+
+        <table class="TargetTable" border="0">
+            <tr>
+                <td>Number:</td>
+                <td><div id="TargetNumberDiv"></div></td>
+            </tr>
+
+            <tr>
+                <td>Name:</td>
+                <td><div id="TargetNameDiv"></div></td>
+            </tr>
+        </table>
+
+        <div class="NavSection">
+            <span id="SearchNumberButton" class="NavButton"></span>
+        </div>
+
+        <div class="NavSection">
+            <span id="BlockNumberButton" class="NavButton"></span>
+        </div>
+    </div>
 </body>
 </html>
