@@ -1,4 +1,2 @@
 #!/bin/bash
-npm install express --save
-npm install body-parser --save
-npm install multer --save
+npm install express body-parser multer log-prefix --save

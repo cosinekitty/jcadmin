@@ -4,11 +4,37 @@
     https://github.com/cosinekitty/jcadmin
 */
 
+function ZeroPad(n, d) {
+    var s = '' + n;
+    while (s.length < d) {
+        s = '0' + s;
+    }
+    return s;
+}
+
+var DaysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+var logprefix = require('log-prefix');
+logprefix(function(){
+    var now = new Date();
+    var text = '[' + now.getFullYear();
+    text += '-' + ZeroPad(now.getMonth() + 1, 2);
+    text += '-' + ZeroPad(now.getDate(), 2);
+    text += ' ' + ZeroPad(now.getHours(), 2);
+    text += ':' + ZeroPad(now.getMinutes(), 2);
+    text += ':' + ZeroPad(now.getSeconds(), 2);
+    text += '.' + ZeroPad(now.getMilliseconds(), 3);
+    text += ' ' + DaysOfWeek[now.getDay()];
+    text += '] %s';
+    return text;
+});
+
 // Configuration...
 var port = 9393;
 var jcpath = '/home/don/dev/trunk/dontronics/phone/jcblock/';
 
 var fs = require('fs');
+
 var express = require('express');
 var app = express();
 
