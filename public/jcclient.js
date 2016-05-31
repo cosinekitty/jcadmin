@@ -32,6 +32,9 @@
     // A list of all mutually-exclusive elements (only one is visible at a time):
     var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv'];
 
+    var PollTimer = null;
+    var PrevPoll = null;
+
     function SetActiveDiv(activeDivId) {
         ModalDivList.forEach(function(divId){
             var div = document.getElementById(divId);
@@ -161,17 +164,6 @@
         table.appendChild(thead);
         table.appendChild(tbody);
 
-        // Now create a refresh button to sit above the table.
-        // <div class="NavSection">
-        //    <span class="CurrentDateTime">yyyy-mm-dd hh:mm:ss</span>
-        // </div>
-        var refreshDiv = document.createElement('div');
-        refreshDiv.className = 'NavSection CurrentDateTime';
-        var dateTimeSpan = document.createElement('span');
-        dateTimeSpan.textContent = FormatCurrentDateTime();
-        dateTimeSpan.onclick = RefreshCallHistory;
-        refreshDiv.appendChild(dateTimeSpan);
-
         // Remove existing children from RecentCallsDiv.
         var rcdiv = document.getElementById('RecentCallsDiv');
         while (rcdiv.firstChild) {
@@ -179,7 +171,6 @@
         }
 
         // Fill in newly-generted content for the RecentCallsDiv...
-        rcdiv.appendChild(refreshDiv);
         rcdiv.appendChild(table);
     }
 
@@ -187,15 +178,24 @@
         ApiGet('/api/calls/0/20', function(calldata){
             // on success
             PopulateCallHistory(calldata.calls);
-            SetActiveDiv('RecentCallsDiv');
-        },
-        function(request) {
-            // on failure
+        });
+    }
+
+    function PollCallerId() {
+        ApiGet('/api/poll', function(poll){
+            if (PrevPoll === null || PrevPoll.callerid.modified !== poll.callerid.modified) {
+                PrevPoll = poll;
+                RefreshCallHistory();
+            }
+            PollTimer = window.setTimeout(PollCallerId, 2000);
         });
     }
 
     window.onload = function() {
-        document.getElementById('BackToListButton').onclick = RefreshCallHistory;
-        RefreshCallHistory();
+        document.getElementById('BackToListButton').onclick = function(){
+            SetActiveDiv('RecentCallsDiv');
+        }
+        SetActiveDiv('RecentCallsDiv');
+        PollCallerId();
     }
 })();

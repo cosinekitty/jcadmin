@@ -32,6 +32,7 @@ logprefix(function(){
 // Configuration...
 var port = 9393;
 var jcpath = '/home/don/dev/trunk/dontronics/phone/jcblock/';
+var jcLogFile = jcpath + 'callerID.dat';
 
 var fs = require('fs');
 
@@ -104,10 +105,29 @@ function ParseIntParam(text, fallback) {
     return value;
 }
 
+app.get('/api/poll', (request, response) => {
+    // https://nodejs.org/api/fs.html#fs_fs_stat_path_callback
+    // https://nodejs.org/api/fs.html#fs_class_fs_stats
+    // http://stackoverflow.com/questions/7559555/last-modified-file-date-in-node-js
+    fs.stat(jcLogFile, (err, stats) => {
+        var reply;
+        if (err) {
+            reply = {'error': err};
+        } else {
+            reply = {
+                'callerid': {
+                    'modified': stats.mtime
+                }
+            };
+        }
+        response.type('json');
+        response.end(JSON.stringify(reply));
+    });
+});
+
 app.get('/api/calls/:start/:limit', (request, response) => {
     var start = ParseIntParam(request.params.start, 0);
     var limit = ParseIntParam(request.params.limit, 1000000000);
-    var jcLogFile = jcpath + 'callerID.dat';
     fs.readFile(jcLogFile, 'utf8', (err, data) => {
         var replyJson = err ? { 'error' : err } : ParseRecentCalls(data, start, limit);
         response.type('json');
