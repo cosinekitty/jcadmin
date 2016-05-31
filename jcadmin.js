@@ -3,6 +3,10 @@
 
     https://github.com/cosinekitty/jcadmin
 */
+var fs = require('fs');
+var express = require('express');
+var app = express();
+var logprefix = require('log-prefix');
 
 function ZeroPad(n, d) {
     var s = '' + n;
@@ -14,7 +18,6 @@ function ZeroPad(n, d) {
 
 var DaysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-var logprefix = require('log-prefix');
 logprefix(function(){
     var now = new Date();
     var text = '[' + now.getFullYear();
@@ -29,15 +32,37 @@ logprefix(function(){
     return text;
 });
 
-// Configuration...
+// Parse the command line for configuration parameters.
+// Usage:  node jcadmin.js port path
 var port = 9393;
-var jcpath = '/home/don/dev/trunk/dontronics/phone/jcblock/';
+var jcpath = '.';
+
+if (process.argv.length > 2) {
+    port = parseInt(process.argv[2]);
+}
+
+if (process.argv.length > 3) {
+    jcpath = process.argv[3];
+}
+
+if (!jcpath.endsWith('/')) {
+    jcpath += '/';
+}
+
 var jcLogFile = jcpath + 'callerID.dat';
 
-var fs = require('fs');
+// Validate the given path to make sure it contains the callerID.dat file.
+try {
+    var jcLogStat = fs.statSync(jcLogFile);
+    console.log('Caller ID modified %s', JSON.stringify(jcLogStat.mtime));
+} catch (e) {
+    console.log('FATAL ERROR: file does not exist: %s', jcLogFile);
+    console.log('Try adjusting the path passed on the command line.');
+    process.exit(1);
+}
 
-var express = require('express');
-var app = express();
+console.log('Monitoring jcblock path %s', jcpath);
+
 
 app.use(express.static('public'));
 
