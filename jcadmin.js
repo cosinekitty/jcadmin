@@ -132,20 +132,30 @@ app.get('/api/poll', (request, response) => {
     // https://nodejs.org/api/fs.html#fs_fs_stat_path_callback
     // https://nodejs.org/api/fs.html#fs_class_fs_stats
     // http://stackoverflow.com/questions/7559555/last-modified-file-date-in-node-js
-    fs.stat(jcLogFile, (err, stats) => {
-        var reply;
+
+    response.type('json');
+    var reply = {};
+
+    // Start 3 async requests. The the first one to encounter an error
+    // or the last one to succeed ends the response for us.
+
+    function StatCallback(err, stats, reply, field) {
         if (err) {
-            reply = {'error': err};
+            reply = { 'error':err, 'field':field };
+            response.end(JSON.stringify(reply));
         } else {
-            reply = {
-                'callerid': {
-                    'modified': stats.mtime
+            if (!reply.error) {
+                reply[field] = { 'modified' : stats.mtime };
+                if (reply.callerid && reply.whitelist && reply.blacklist) {
+                    response.end(JSON.stringify(reply));
                 }
-            };
+            }
         }
-        response.type('json');
-        response.end(JSON.stringify(reply));
-    });
+    }
+
+    fs.stat(jcLogFile,         (err, stats) => StatCallback(err, stats, reply, 'callerid' ));
+    fs.stat(whiteListFileName, (err, stats) => StatCallback(err, stats, reply, 'whitelist'));
+    fs.stat(blackListFileName, (err, stats) => StatCallback(err, stats, reply, 'blacklist'));
 });
 
 app.get('/api/calls/:start/:limit', (request, response) => {
