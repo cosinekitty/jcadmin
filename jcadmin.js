@@ -183,6 +183,38 @@ function PhoneListContainsNumber(data, number) {
     return false;
 }
 
+app.get('/api/fetch/:filetype', (request, response) => {
+    response.type('json');
+
+    var filename;
+    switch (request.params.filetype) {
+        case 'whitelist':  filename = whiteListFileName;  break;
+        case 'blacklist':  filename = blackListFileName;  break;
+        default:
+            response.end(JSON.stringify({'error' : 'Invalid filetype ' + request.params.filetype}));
+            return;
+    }
+
+    fs.readFile(filename, 'utf8', (err, data) => {
+        if (err) {
+            response.end(JSON.stringify({'error' : err}));
+        } else {
+            reply = { 'table' : {} };
+            var lines = data.split('\n');
+            for (var line of lines) {
+                if (!line.startsWith('#') && (line.length >= 25)) {
+                    var limit = line.indexOf('?');
+                    if (limit < 0) limit = 19;
+                    var pattern = line.substr(0, limit).trim();
+                    var comment = line.substr(25).trim();
+                    reply.table[pattern] = comment;
+                }
+            }
+            response.end(JSON.stringify(reply));
+        }
+    });
+});
+
 app.get('/api/number/:phonenumber', (request, response) => {
     response.type('json');
     var phonenumber = request.params.phonenumber;
