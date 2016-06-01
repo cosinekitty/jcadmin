@@ -3,6 +3,7 @@
 
     https://github.com/cosinekitty/jcadmin
 */
+var path = require('path');
 var fs = require('fs');
 var express = require('express');
 var app = express();
@@ -45,11 +46,7 @@ if (process.argv.length > 3) {
     jcpath = process.argv[3];
 }
 
-if (!jcpath.endsWith('/')) {
-    jcpath += '/';
-}
-
-var jcLogFile = jcpath + 'callerID.dat';
+var jcLogFile = path.join(jcpath, 'callerID.dat');
 
 // Validate the given path to make sure it contains the callerID.dat file.
 try {
@@ -178,7 +175,7 @@ function PhoneListContainsNumber(data, number) {
 app.get('/api/number/:phonenumber', (request, response) => {
     response.type('json');
     var phonenumber = request.params.phonenumber;
-    var whiteListFileName = jcpath + 'whitelist.dat';
+    var whiteListFileName = path.join(jcpath, 'whitelist.dat');
     fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
         if (werr) {
             response.end(JSON.stringify({'error' : werr}));
@@ -191,7 +188,7 @@ app.get('/api/number/:phonenumber', (request, response) => {
                 // Search blacklist for the phone number.
                 // If found, the phone number is blocked, otherwise it is neither
                 // whitelisted nor blocked.
-                var blackListFileName = jcpath + 'blacklist.dat';
+                var blackListFileName = path.join(jcpath, 'blacklist.dat');
                 fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
                     if (berr) {
                         response.end(JSON.stringify({'error': berr}));
@@ -223,7 +220,7 @@ app.get('/api/block/:phonenumber', (request, response) => {
     var phonenumber = request.params.phonenumber;
     console.log('Received request to block %s', phonenumber);
 
-    var whiteListFileName = jcpath + 'whitelist.dat';
+    var whiteListFileName = path.join(jcpath, 'whitelist.dat');
     fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
         if (werr) {
             response.end(JSON.stringify({'error' : werr}));
@@ -233,7 +230,7 @@ app.get('/api/block/:phonenumber', (request, response) => {
                 response.end(JSON.stringify({'error' : 'Refusing to block phone number because it is whitelisted.'}));
             } else {
                 // Search blacklist for number. If absent, add it.
-                var blackListFileName = jcpath + 'blacklist.dat';
+                var blackListFileName = path.join(jcpath, 'blacklist.dat');
                 fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
                     if (berr) {
                         console.log('Blacklist file error');
