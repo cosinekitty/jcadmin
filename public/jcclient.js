@@ -33,7 +33,31 @@
     var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv'];
 
     var PollTimer = null;
-    var PrevPoll = null;
+    var PrevPoll = {
+        'callerid':  {
+            'modified': '',
+            'data': {
+                'calls': [],
+                'limit': 0,
+                'start': 0,
+                'total': 0,
+            }
+        },
+
+        'whitelist': {
+            'modified': '',
+            'data': {
+                'table': {}
+            }
+        },
+
+        'blacklist': {
+            'modified':'',
+            'data':{
+                'table': {}
+            }
+        }
+    };
 
     function SetActiveDiv(activeDivId) {
         ModalDivList.forEach(function(divId){
@@ -174,18 +198,39 @@
         rcdiv.appendChild(table);
     }
 
+    function UpdateUserInterface() {
+        PopulateCallHistory(PrevPoll.callerid.data.calls);
+    }
+
     function RefreshCallHistory() {
         ApiGet('/api/calls/0/20', function(calldata){
-            // on success
-            PopulateCallHistory(calldata.calls);
+            PrevPoll.callerid.data = calldata;
+            UpdateUserInterface();
+        });
+    }
+
+    function RefreshPhoneList(filetype) {
+        ApiGet('/api/fetch/' + filetype, function(data) {
+            PrevPoll[filetype].data = data;
+            UpdateUserInterface();
         });
     }
 
     function PollCallerId() {
         ApiGet('/api/poll', function(poll){
-            if (PrevPoll === null || PrevPoll.callerid.modified !== poll.callerid.modified) {
-                PrevPoll = poll;
+            if (PrevPoll.callerid.modified !== poll.callerid.modified) {
+                PrevPoll.callerid.modified = poll.callerid.modified;
                 RefreshCallHistory();
+            }
+
+            if (PrevPoll.whitelist.modified !== poll.whitelist.modified) {
+                PrevPoll.whitelist.modified = poll.whitelist.modified;
+                RefreshPhoneList('whitelist');
+            }
+
+            if (PrevPoll.blacklist.modified !== poll.blacklist.modified) {
+                PrevPoll.blacklist.modified = poll.blacklist.modified;
+                RefreshPhoneList('blacklist');
             }
             PollTimer = window.setTimeout(PollCallerId, 2000);
         });
