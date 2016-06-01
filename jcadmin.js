@@ -46,26 +46,27 @@ if (process.argv.length > 3) {
     jcpath = process.argv[3];
 }
 
-var jcLogFile = path.join(jcpath, 'callerID.dat');
-
-// Validate the given path to make sure it contains the callerID.dat file.
-try {
-    var jcLogStat = fs.statSync(jcLogFile);
-    console.log('Caller ID modified %s', JSON.stringify(jcLogStat.mtime));
-} catch (e) {
-    console.log('FATAL ERROR: file does not exist: %s', jcLogFile);
-    console.log('Try adjusting the path passed on the command line.');
-    process.exit(1);
-}
-
+var jcLogFile = ValidateFileExists(path.join(jcpath, 'callerID.dat'));
+var whiteListFileName = ValidateFileExists(path.join(jcpath, 'whitelist.dat'));
+var blackListFileName = ValidateFileExists(path.join(jcpath, 'blacklist.dat'));
 console.log('Monitoring jcblock path %s', jcpath);
-
 
 app.use(express.static('public'));
 
 app.get('/', (request, response) => {
-    response.sendFile(__dirname + '/index.html');
+    response.sendFile(path.join(__dirname, 'index.html'));
 });
+
+function ValidateFileExists(filename) {
+    try {
+        fs.statSync(filename);
+        return filename;
+    } catch (e) {
+        console.log('FATAL ERROR: file does not exist: %s', filename);
+        console.log('Try adjusting the path passed on the command line.');
+        process.exit(1);
+    }
+}
 
 function MakeDateTimeString(date, time) {
     // date = '011916', time = '1623'  ==>  '2016-01-19 16:23'
@@ -175,7 +176,6 @@ function PhoneListContainsNumber(data, number) {
 app.get('/api/number/:phonenumber', (request, response) => {
     response.type('json');
     var phonenumber = request.params.phonenumber;
-    var whiteListFileName = path.join(jcpath, 'whitelist.dat');
     fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
         if (werr) {
             response.end(JSON.stringify({'error' : werr}));
@@ -188,7 +188,6 @@ app.get('/api/number/:phonenumber', (request, response) => {
                 // Search blacklist for the phone number.
                 // If found, the phone number is blocked, otherwise it is neither
                 // whitelisted nor blocked.
-                var blackListFileName = path.join(jcpath, 'blacklist.dat');
                 fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
                     if (berr) {
                         response.end(JSON.stringify({'error': berr}));
@@ -220,7 +219,6 @@ app.get('/api/block/:phonenumber', (request, response) => {
     var phonenumber = request.params.phonenumber;
     console.log('Received request to block %s', phonenumber);
 
-    var whiteListFileName = path.join(jcpath, 'whitelist.dat');
     fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
         if (werr) {
             response.end(JSON.stringify({'error' : werr}));
@@ -230,7 +228,6 @@ app.get('/api/block/:phonenumber', (request, response) => {
                 response.end(JSON.stringify({'error' : 'Refusing to block phone number because it is whitelisted.'}));
             } else {
                 // Search blacklist for number. If absent, add it.
-                var blackListFileName = path.join(jcpath, 'blacklist.dat');
                 fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
                     if (berr) {
                         console.log('Blacklist file error');
