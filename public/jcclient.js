@@ -109,13 +109,13 @@
         });
     }
 
-    function CreatePhoneNumberCell(call) {
+    function CreatePhoneNumberCell(call, status) {
         var numberCell = document.createElement('td');
-        if (call.number !== "") {
+        if (call.number !== '') {
             numberCell.textContent = call.number;
 
             // If jcblock had neutral opinion, allow blocking/whitelisting...
-            if (call.status === '-') {
+            if (status === '-') {
                 numberCell.onclick = function() {
                     SetTargetCall(call);
                 }
@@ -147,7 +147,33 @@
         return text;
     }
 
-    function PopulateCallHistory(recent) {
+    function PhoneListMatch(list, number, name) {
+        for (var key in list) {
+            if (key.length > 0 && (number.indexOf(key) >= 0 || name.indexOf(key) >= 0)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function PhoneListStatus(number, name, whitelist, blacklist) {
+        // Emulate jcblock's rules for whitelisting and blacklisting.
+        // First look in the whitelist for any pattern match with name or number.
+        // If found, it is whitelisted.
+        // Otherwise look in blacklist, and if found, it is blacklisted.
+        // Otherwise it is neutral.
+        if (PhoneListMatch(whitelist, number, name)) {
+            return 'W';
+        }
+
+        if (PhoneListMatch(blacklist, number, name)) {
+            return 'B';
+        }
+
+        return '-';
+    }
+
+    function PopulateCallHistory(recent, whitelist, blacklist) {
         var table = document.createElement('table');
         table.setAttribute('class', 'RecentCallTable');
 
@@ -174,14 +200,25 @@
 
             var whenCell = document.createElement('td');
             whenCell.appendChild(document.createTextNode(recent[i].when));
+            whenCell.className = BlockStatusClassName(recent[i].status);
             row.appendChild(whenCell);
 
-            row.appendChild(CreatePhoneNumberCell(recent[i]));
+            var originStatus = PhoneListStatus(
+                recent[i].number,
+                recent[i].name,
+                whitelist,
+                blacklist);
+
+            var numberCell = CreatePhoneNumberCell(recent[i], originStatus);
+            row.appendChild(numberCell);
 
             var nameCell = document.createElement('td');
             nameCell.appendChild(document.createTextNode(recent[i].name));
             row.appendChild(nameCell);
-            row.className = BlockStatusClassName(recent[i].status);
+
+            numberCell.className = nameCell.className = BlockStatusClassName(originStatus);
+
+            //row.className = BlockStatusClassName(recent[i].status);
             tbody.appendChild(row);
         }
 
@@ -199,7 +236,7 @@
     }
 
     function UpdateUserInterface() {
-        PopulateCallHistory(PrevPoll.callerid.data.calls);
+        PopulateCallHistory(PrevPoll.callerid.data.calls, PrevPoll.whitelist.data.table, PrevPoll.blacklist.data.table);
     }
 
     function RefreshCallHistory() {
