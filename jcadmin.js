@@ -215,36 +215,6 @@ app.get('/api/fetch/:filetype', (request, response) => {
     });
 });
 
-app.get('/api/number/:phonenumber', (request, response) => {
-    response.type('json');
-    var phonenumber = request.params.phonenumber;
-    fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
-        if (werr) {
-            response.end(JSON.stringify({'error' : werr}));
-        } else {
-            // Search whitelist for phone number.
-            // If found, return immediately that the number is whitelisted.
-            if (PhoneListContainsNumber(wdata, phonenumber)) {
-                response.end(JSON.stringify({'status' : 'W'}));
-            } else {
-                // Search blacklist for the phone number.
-                // If found, the phone number is blocked, otherwise it is neither
-                // whitelisted nor blocked.
-                fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
-                    if (berr) {
-                        response.end(JSON.stringify({'error': berr}));
-                    } else {
-                        var blacklisted = PhoneListContainsNumber(bdata, phonenumber);
-                        response.end(JSON.stringify({
-                            'status' : blacklisted ? 'B' : '-'
-                        }));
-                    }
-                });
-            }
-        }
-    });
-});
-
 function MakePhoneNumberRecord(phonenumber) {
     if (phonenumber.length > 18) {
         phonenumber = phonenumber.substring(0, 18);

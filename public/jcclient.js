@@ -83,30 +83,27 @@
         var blockButton = document.getElementById('BlockNumberButton');
         blockButton.textContent = '';
         blockButton.onclick = null;
-        var uriNumber= encodeURIComponent(call.number);
 
-        ApiGet('/api/number/' + uriNumber, function(data){
-            // on success
-            numberDiv.className = BlockStatusClassName(data.status);
+        var status = PhoneCallStatus(call);
+        numberDiv.className = BlockStatusClassName(status);
 
-            if (data.status === 'B') {
-                blockButton.textContent = '(Blocked)';
-            } else {
-                blockButton.textContent = 'Block This Number!';
-                blockButton.onclick = function() {
-                    ApiGet('/api/block/' + uriNumber, function(blockResult) {
-                        blockButton.onclick = null;
-                        if (blockResult.status === 'B') {
-                            blockButton.textContent = '(Blocked)';
-                        } else {
-                            blockButton.textContent = '(??? ERROR ???)';
-                        }
-                        numberDiv.className = BlockStatusClassName(blockResult.status);
-                    });
-                }
+        if (status === 'B') {
+            blockButton.textContent = '(Blocked)';
+        } else {
+            blockButton.textContent = 'Block This Number!';
+            blockButton.onclick = function() {
+                ApiGet('/api/block/' + encodeURIComponent(call.number), function(blockResult) {
+                    blockButton.onclick = null;
+                    if (blockResult.status === 'B') {
+                        blockButton.textContent = '(Blocked)';
+                    } else {
+                        blockButton.textContent = '(??? ERROR ???)';
+                    }
+                    numberDiv.className = BlockStatusClassName(blockResult.status);
+                });
             }
-            SetActiveDiv('TargetCallDiv');
-        });
+        }
+        SetActiveDiv('TargetCallDiv');
     }
 
     function CreatePhoneNumberCell(call, status) {
@@ -171,6 +168,14 @@
         }
 
         return '-';
+    }
+
+    function PhoneCallStatus(call) {
+        return PhoneListStatus(
+            call.number,
+            call.name,
+            PrevPoll.whitelist.data.table,
+            PrevPoll.blacklist.data.table);
     }
 
     function PopulateCallHistory(recent, whitelist, blacklist) {
