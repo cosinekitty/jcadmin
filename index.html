@@ -32,7 +32,19 @@
         </div>
 
         <div class="NavSection">
-            <span id="BlockNumberButton" class="NavButton"></span>
+            <form action="">
+                <input type="radio" name="TargetStatus" value="Safe" id="TargetRadioButtonSafe">
+                <label for="TargetRadioButtonSafe">Safe</label>
+                <br>
+
+                <input type="radio" name="TargetStatus" value="Neutral" id="TargetRadioButtonNeutral">
+                <label for="TargetRadioButtonNeutral">Neutral</label>
+                <br>
+
+                <input type="radio" name="TargetStatus" value="Blocked" id="TargetRadioButtonBlocked">
+                <label for="TargetRadioButtonBlocked">Blocked</label>
+                <br>
+            </form>
         </div>
     </div>
 </body>

@@ -128,12 +128,21 @@ function ParseIntParam(text, fallback) {
     return value;
 }
 
+function EndResponse(response, result) {
+    response.type('json');
+    response.end(JSON.stringify(result));
+}
+
+function FailResponse(response, error) {
+    console.log('FailResponse: %s', error);
+    EndResponse(response, {'error': error});
+}
+
 app.get('/api/poll', (request, response) => {
     // https://nodejs.org/api/fs.html#fs_fs_stat_path_callback
     // https://nodejs.org/api/fs.html#fs_class_fs_stats
     // http://stackoverflow.com/questions/7559555/last-modified-file-date-in-node-js
 
-    response.type('json');
     var reply = {};
 
     // Start 3 async requests. The the first one to encounter an error
@@ -141,13 +150,12 @@ app.get('/api/poll', (request, response) => {
 
     function StatCallback(err, stats, reply, field) {
         if (err) {
-            reply = { 'error':err, 'field':field };
-            response.end(JSON.stringify(reply));
+            EndResponse(response, { 'error':err, 'field':field });
         } else {
             if (!reply.error) {
                 reply[field] = { 'modified' : stats.mtime };
                 if (reply.callerid && reply.whitelist && reply.blacklist) {
-                    response.end(JSON.stringify(reply));
+                    EndResponse(response, reply);
                 }
             }
         }
@@ -162,26 +170,13 @@ app.get('/api/calls/:start/:limit', (request, response) => {
     var start = ParseIntParam(request.params.start, 0);
     var limit = ParseIntParam(request.params.limit, 1000000000);
     fs.readFile(jcLogFile, 'utf8', (err, data) => {
-        var replyJson = err ? { 'error' : err } : ParseRecentCalls(data, start, limit);
-        response.type('json');
-        response.end(JSON.stringify(replyJson));
+        if (err) {
+            FailResponse(response, err);
+        } else {
+            EndResponse(response, ParseRecentCalls(data, start, limit));
+        }
     });
 });
-
-function PhoneListContainsNumber(data, number) {
-    var lines = data.split('\n');
-    for (var i=0; i < lines.length; ++i) {
-        if (!lines[i].startsWith('#')) {
-            var limit = lines[i].indexOf('?');
-            if (limit < 0) limit = 19;
-            var entry = lines[i].substr(0, limit).trim();
-            if (number === entry) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
 
 app.get('/api/fetch/:filetype', (request, response) => {
     response.type('json');
@@ -191,31 +186,28 @@ app.get('/api/fetch/:filetype', (request, response) => {
         case 'whitelist':  filename = whiteListFileName;  break;
         case 'blacklist':  filename = blackListFileName;  break;
         default:
-            response.end(JSON.stringify({'error' : 'Invalid filetype ' + request.params.filetype}));
+            FailResponse(response, 'Invalid filetype ' + request.params.filetype);
             return;
     }
 
     fs.readFile(filename, 'utf8', (err, data) => {
         if (err) {
-            response.end(JSON.stringify({'error' : err}));
+            FailResponse(response, err);
         } else {
             reply = { 'table' : {} };
             var lines = data.split('\n');
             for (var line of lines) {
-                if (!line.startsWith('#') && (line.length >= 25)) {
-                    var limit = line.indexOf('?');
-                    if (limit < 0) limit = 19;
-                    var pattern = line.substr(0, limit).trim();
-                    var comment = line.substr(25).trim();
-                    reply.table[pattern] = comment;
+                var record = ParseRecord(line);
+                if (record) {
+                    reply.table[record.pattern] = record.comment;
                 }
             }
-            response.end(JSON.stringify(reply));
+            EndResponse(response, reply);
         }
     });
 });
 
-function MakePhoneNumberRecord(phonenumber) {
+function MakePhoneNumberRecord(phonenumber, comment) {
     if (phonenumber.length > 18) {
         phonenumber = phonenumber.substring(0, 18);
     }
@@ -223,51 +215,131 @@ function MakePhoneNumberRecord(phonenumber) {
     while (record.length < 19) {
         record += ' ';
     }
-    record += '++++++        Blocked by jcadmin\n';
+    if (!comment) {
+        comment = '';
+    }
+    record += '++++++        ' + comment + '\n';
     return record;
 }
 
-app.get('/api/block/:phonenumber', (request, response) => {
-    var phonenumber = request.params.phonenumber;
-    console.log('Received request to block %s', phonenumber);
+function ParseRecord(line) {
+    if (!line.startsWith('#') && (line.length >= 25)) {
+        var limit = line.indexOf('?');
+        if (limit < 0) limit = 19;
+        var pattern = line.substr(0, limit).trim();
+        var comment = line.substr(25).trim();
+        return { 'pattern':pattern, 'comment':comment };
+    }
+    return null;
+}
 
-    fs.readFile(whiteListFileName, 'utf8', (werr, wdata) => {
-        if (werr) {
-            response.end(JSON.stringify({'error' : werr}));
+function RemovePhoneNumberFromFile(filename, phonenumber, response, callback) {
+    fs.readFile(filename, 'utf8', (err,data) => {
+        if (err) {
+            FailResponse(response, err);
         } else {
-            // Search whitelist for number. If present, fail the request.
-            if (PhoneListContainsNumber(wdata, phonenumber)) {
-                response.end(JSON.stringify({'error' : 'Refusing to block phone number because it is whitelisted.'}));
-            } else {
-                // Search blacklist for number. If absent, add it.
-                fs.readFile(blackListFileName, 'utf8', (berr, bdata) => {
-                    if (berr) {
-                        console.log('Blacklist file error');
-                        response.end(JSON.stringify({'error': berr}));
+            var lines = data.split('\n');
+            var updated = '';
+            var numChanges = 0;
+            for (var line of lines) {
+                var record = ParseRecord(line);
+                if (record && record.pattern===phonenumber) {
+                    ++numChanges;
+                } else {
+                    updated += line + '\n';
+                }
+            }
+
+            if (numChanges > 0) {
+                // Write 'updated' back to the file.
+                fs.writeFile(filename, updated, 'utf8', (err) => {
+                    if (err) {
+                        FailResponse(response, err);
                     } else {
-                        //console.log('Blacklist file success');
-                        if (PhoneListContainsNumber(bdata, phonenumber)) {
-                            // Already blacklisted, so immediately succeed.
-                            console.log('Already blacklisted');
-                            response.end(JSON.stringify({'status' : 'B'}));
-                        } else {
-                            // Append a new line to the blacklist file.
-                            var record = MakePhoneNumberRecord(phonenumber);
-                            fs.appendFile(blackListFileName, record, 'utf8', (aerr) => {
-                                if (aerr) {
-                                    console.log('Error appending to file!');
-                                    response.end(JSON.stringify({'error': aerr}));
-                                } else {
-                                    console.log('Appended record to blacklist');
-                                    response.end(JSON.stringify({'status' : 'B'}));
-                                }
-                            });
-                        }
+                        callback();
                     }
                 });
+            } else {
+                callback();
             }
         }
     });
+}
+
+function AddPhoneNumberToFile(filename, phonenumber, comment, response, callback) {
+    fs.readFile(filename, 'utf8', (err,data) => {
+        if (err) {
+            console.log('Error reading from file %s: %s', filename, err);
+            FailResponse(response, err);
+        } else {
+            var lines = data.split('\n');
+            for (var line of lines) {
+                var record = ParseRecord(line);
+                if (record && record.pattern===phonenumber) {
+                    callback();
+                    return;
+                }
+            }
+
+            // Append new record to file.
+            // Append a new line to the blacklist file.
+            var record = MakePhoneNumberRecord(phonenumber);
+            fs.appendFile(filename, record, 'utf8', (aerr) => {
+                if (aerr) {
+                    console.log('Error appending to file %s: %s', filename, aerr);
+                    FailResponse(response, aerr);
+                } else {
+                    callback();
+                }
+            });
+        }
+    });
+}
+
+app.get('/api/classify/:status/:phonenumber/:comment', (request, response) => {
+    var status = request.params.status;
+    var phonenumber = request.params.phonenumber;
+    var comment = request.params.comment;
+    console.log('Classify status=%s, phonenumber=%s, comment=%s', status, phonenumber, comment);
+
+    // For now, only allow exact phone number patterns.
+    // This is to prevent damage to whitelist and blacklist files.
+    if (!phonenumber.match(/^[0-9]{10}$/)) {
+        console.log('Illegal phone number pattern! Failing!');
+        FailResponse(response, 'Invalid phone number');
+        return;
+    }
+
+    switch (status) {
+        case 'blocked':
+            RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
+                AddPhoneNumberToFile(blackListFileName, phonenumber, comment, response, function(){
+                    EndResponse(response, {'status': 'B'});
+                });
+            });
+            break;
+
+        case 'neutral':
+            RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
+                RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
+                    EndResponse(response, {'status': '-'});
+                });
+            });
+            break;
+
+        case 'safe':
+            RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
+                AddPhoneNumberToFile(whiteListFileName, phonenumber, comment, response, function(){
+                    EndResponse(response, {'status': 'W'});
+                });
+            });
+            break;
+
+        default:
+            console.log('Unknown status! Failing!');
+            FailResponse(response, 'Invalid status');
+            return;
+    }
 });
 
 const server = app.listen(port, () => {

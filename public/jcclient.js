@@ -71,6 +71,10 @@
     }
 
     function SetTargetCall(call) {
+        var safeButton    = document.getElementById('TargetRadioButtonSafe');
+        var neutralButton = document.getElementById('TargetRadioButtonNeutral');
+        var blockButton   = document.getElementById('TargetRadioButtonBlocked');
+
         var numberDiv = document.getElementById('TargetNumberDiv');
         numberDiv.textContent = call.number;
 
@@ -80,29 +84,46 @@
         var searchButton = document.getElementById('SearchNumberButton');
         searchButton.innerHTML = '<a href="http://www.google.com/search?q=' + call.number + '" target="_blank">Search Google</a>';
 
-        var blockButton = document.getElementById('BlockNumberButton');
-        blockButton.textContent = '';
-        blockButton.onclick = null;
-
         var status = PhoneCallStatus(call);
         numberDiv.className = BlockStatusClassName(status);
 
-        if (status === 'B') {
-            blockButton.textContent = '(Blocked)';
-        } else {
-            blockButton.textContent = 'Block This Number!';
-            blockButton.onclick = function() {
-                ApiGet('/api/block/' + encodeURIComponent(call.number), function(blockResult) {
-                    blockButton.onclick = null;
-                    if (blockResult.status === 'B') {
-                        blockButton.textContent = '(Blocked)';
-                    } else {
-                        blockButton.textContent = '(??? ERROR ???)';
-                    }
-                    numberDiv.className = BlockStatusClassName(blockResult.status);
-                });
-            }
+        switch (status) {
+            case 'B':
+                blockButton.checked = true;
+                break;
+
+            case 'W':
+                safeButton.checked = true;
+                break;
+
+            default:
+                neutralButton.checked = true;
+                break;
         }
+
+        function Classify(status, phonenumber, comment) {
+            var url = '/api/classify/' +
+                status + '/' +
+                encodeURIComponent(phonenumber) + '/' +
+                encodeURIComponent(comment);
+
+            ApiGet(url, function(data) {
+                numberDiv.className = BlockStatusClassName(data.status);
+            });
+        }
+
+        safeButton.onclick = function() {
+            Classify('safe', call.number, call.name);
+        }
+
+        neutralButton.onclick = function() {
+            Classify('neutral', call.number, call.name);
+        }
+
+        blockButton.onclick = function() {
+            Classify('blocked', call.number, call.name);
+        }
+
         SetActiveDiv('TargetCallDiv');
     }
 
@@ -110,12 +131,8 @@
         var numberCell = document.createElement('td');
         if (call.number !== '') {
             numberCell.textContent = call.number;
-
-            // If jcblock had neutral opinion, allow blocking/whitelisting...
-            if (status === '-') {
-                numberCell.onclick = function() {
-                    SetTargetCall(call);
-                }
+            numberCell.onclick = function() {
+                SetTargetCall(call);
             }
         }
         return numberCell;
@@ -171,14 +188,24 @@
     }
 
     function PhoneCallStatus(call) {
-        return PhoneListStatus(
-            call.number,
-            call.name,
-            PrevPoll.whitelist.data.table,
-            PrevPoll.blacklist.data.table);
+        // Emulate jcblock's rules for whitelisting and blacklisting.
+        // First look in the whitelist for any pattern match with name or number.
+        // If found, it is whitelisted.
+        // Otherwise look in blacklist, and if found, it is blacklisted.
+        // Otherwise it is neutral.
+        if (PhoneListMatch(PrevPoll.whitelist.data.table, call.number, call.name)) {
+            return 'W';
+        }
+
+        if (PhoneListMatch(PrevPoll.blacklist.data.table, call.number, call.name)) {
+            return 'B';
+        }
+
+        return '-';
     }
 
-    function PopulateCallHistory(recent, whitelist, blacklist) {
+    function PopulateCallHistory() {
+        var recent = PrevPoll.callerid.data.calls;
         var table = document.createElement('table');
         table.setAttribute('class', 'RecentCallTable');
 
@@ -208,11 +235,7 @@
             whenCell.className = BlockStatusClassName(recent[i].status);
             row.appendChild(whenCell);
 
-            var originStatus = PhoneListStatus(
-                recent[i].number,
-                recent[i].name,
-                whitelist,
-                blacklist);
+            var originStatus = PhoneCallStatus(recent[i]);
 
             var numberCell = CreatePhoneNumberCell(recent[i], originStatus);
             row.appendChild(numberCell);
@@ -223,7 +246,6 @@
 
             numberCell.className = nameCell.className = BlockStatusClassName(originStatus);
 
-            //row.className = BlockStatusClassName(recent[i].status);
             tbody.appendChild(row);
         }
 
@@ -241,7 +263,7 @@
     }
 
     function UpdateUserInterface() {
-        PopulateCallHistory(PrevPoll.callerid.data.calls, PrevPoll.whitelist.data.table, PrevPoll.blacklist.data.table);
+        PopulateCallHistory();
     }
 
     function RefreshCallHistory() {
