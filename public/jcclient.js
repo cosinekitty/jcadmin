@@ -187,6 +187,22 @@
         return '-';
     }
 
+    function PhoneCallDisplayName(call) {
+        // If there is a comment for the specified caller's exact phone number,
+        // use it for display instead of the raw caller ID text.
+        // This allows the user to more easily recognize a caller, especially a safe caller.
+        // Search whitelist first, because whitelist trumps blacklist anyway.
+        var comment = PrevPoll.whitelist.data.table[call.number] || PrevPoll.blacklist.data.table[call.number];
+        if (comment) {
+            comment = comment.trim();
+            if (comment.length > 0) {
+                return comment;
+            }
+        }
+
+        return call.name;
+    }
+
     function FormatDateTime(when, now) {
         // Example: d = '2016-12-31 15:42'
         var format = when;
@@ -263,7 +279,8 @@
             row.appendChild(numberCell);
 
             var nameCell = document.createElement('td');
-            nameCell.appendChild(document.createTextNode(recent[i].name));
+            var displayName = PhoneCallDisplayName(recent[i]);
+            nameCell.appendChild(document.createTextNode(displayName));
             row.appendChild(nameCell);
 
             numberCell.className = nameCell.className = BlockStatusClassName(originStatus);
