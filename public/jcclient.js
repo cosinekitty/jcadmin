@@ -70,6 +70,13 @@
         });
     }
 
+    function EnableDisableControls(enabled) {
+        var disabled = !enabled;
+        document.getElementById('TargetRadioButtonSafe').disabled = disabled;
+        document.getElementById('TargetRadioButtonNeutral').disabled = disabled;
+        document.getElementById('TargetRadioButtonBlocked').disabled = disabled;
+    }
+
     function SetTargetCall(call) {
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
         var neutralButton = document.getElementById('TargetRadioButtonNeutral');
@@ -102,6 +109,8 @@
         }
 
         function Classify(status, phonenumber, comment) {
+            EnableDisableControls(false);
+
             var url = '/api/classify/' +
                 status + '/' +
                 encodeURIComponent(phonenumber) + '/' +
@@ -109,6 +118,7 @@
 
             ApiGet(url, function(data) {
                 numberDiv.className = BlockStatusClassName(data.status);
+                EnableDisableControls(true);
             });
         }
 
@@ -124,6 +134,7 @@
             Classify('blocked', call.number, call.name);
         }
 
+        EnableDisableControls(true);
         SetActiveDiv('TargetCallDiv');
     }
 
