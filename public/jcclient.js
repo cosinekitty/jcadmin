@@ -52,10 +52,14 @@
         },
 
         'blacklist': {
-            'modified':'',
+            'modified': '',
             'data':{
                 'table': {}
             }
+        },
+
+        'database': {
+            'modified': ''
         }
     };
 
@@ -77,19 +81,30 @@
         document.getElementById('TargetRadioButtonBlocked').disabled = disabled;
     }
 
+    function SaveName(call, name) {
+        var url = '/api/rename/' + encodeURIComponent(call.number) + '/' + encodeURIComponent(name);
+        ApiGet(url, function(data){
+            // Update UI here?
+        });
+    }
+
     function SetTargetCall(call) {
+        var backButton    = document.getElementById('BackToListButton');
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
         var neutralButton = document.getElementById('TargetRadioButtonNeutral');
         var blockButton   = document.getElementById('TargetRadioButtonBlocked');
+        var numberDiv     = document.getElementById('TargetNumberDiv');
+        var nameEditBox   = document.getElementById('TargetNameEditBox');
+        var searchButton  = document.getElementById('SearchNumberButton');
 
-        var numberDiv = document.getElementById('TargetNumberDiv');
         numberDiv.textContent = call.number;
 
-        var nameDiv = document.getElementById('TargetNameDiv');
-        nameDiv.textContent = call.name;
+        nameEditBox.value = PhoneCallDisplayName(call);
+        nameEditBox.onblur = function() {
+            SaveName(call, nameEditBox.value);
+        }
 
-        var searchButton = document.getElementById('SearchNumberButton');
-        searchButton.innerHTML = '<a href="http://www.google.com/search?q=' + call.number + '" target="_blank">Search Google</a>';
+        searchButton.innerHTML = '<a href="http://www.google.com/search?q=' + encodeURIComponent(call.number) + '" target="_blank">Search Google</a>';
 
         var status = PhoneCallStatus(call);
         numberDiv.className = BlockStatusClassName(status);
@@ -132,6 +147,10 @@
 
         blockButton.onclick = function() {
             Classify('blocked', call.number, call.name);
+        }
+
+        backButton.onclick = function(){
+            SetActiveDiv('RecentCallsDiv');
         }
 
         EnableDisableControls(true);
@@ -187,20 +206,13 @@
         return '-';
     }
 
-    function PhoneCallDisplayName(call) {
-        // If there is a comment for the specified caller's exact phone number,
-        // use it for display instead of the raw caller ID text.
-        // This allows the user to more easily recognize a caller, especially a safe caller.
-        // Search whitelist first, because whitelist trumps blacklist anyway.
-        var comment = PrevPoll.whitelist.data.table[call.number] || PrevPoll.blacklist.data.table[call.number];
-        if (comment) {
-            comment = comment.trim();
-            if (comment.length > 0) {
-                return comment;
-            }
-        }
+    function SanitizeSpaces(text) {
+        // Replace redundant white space with a single space and trim outside spaces.
+        return text ? text.replace(/\s+/g, ' ').trim() : '';
+    }
 
-        return call.name;
+    function PhoneCallDisplayName(call) {
+        return SanitizeSpaces(call.name);
     }
 
     function FormatDateTime(when, now) {
@@ -321,8 +333,10 @@
 
     function PollCallerId() {
         ApiGet('/api/poll', function(poll){
-            if (PrevPoll.callerid.modified !== poll.callerid.modified) {
+            if (PrevPoll.callerid.modified !== poll.callerid.modified ||
+                PrevPoll.database.modified !== poll.database.modified) {
                 PrevPoll.callerid.modified = poll.callerid.modified;
+                PrevPoll.database.modified = poll.database.modified;
                 RefreshCallHistory();
             }
 
@@ -340,9 +354,6 @@
     }
 
     window.onload = function() {
-        document.getElementById('BackToListButton').onclick = function(){
-            SetActiveDiv('RecentCallsDiv');
-        }
         SetActiveDiv('RecentCallsDiv');
         PollCallerId();
     }
