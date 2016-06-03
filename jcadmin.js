@@ -98,8 +98,22 @@ function ParseCallLine(line) {
     return null;
 }
 
-function ParseRecentCalls(text, start, limit) {
+function SplitLines(text) {
     var lines = text.split('\n');
+
+    // This usually leaves us with a false blank line at the end. (After the last '\n'.)
+    // Delete that fake line if present.
+    if (lines.length > 0) {
+        if (lines[lines.length - 1] === '') {
+            --lines.length;
+        }
+    }
+
+    return lines;
+}
+
+function ParseRecentCalls(text, start, limit) {
+    var lines = SplitLines(text);
     var calls = [];
     var total = 0;
     for (var i = lines.length - 1; i >= 0; --i) {
@@ -195,7 +209,7 @@ app.get('/api/fetch/:filetype', (request, response) => {
             FailResponse(response, err);
         } else {
             reply = { 'table' : {} };
-            var lines = data.split('\n');
+            var lines = SplitLines(data);
             for (var line of lines) {
                 var record = ParseRecord(line);
                 if (record) {
@@ -238,7 +252,7 @@ function RemovePhoneNumberFromFile(filename, phonenumber, response, callback) {
         if (err) {
             FailResponse(response, err);
         } else {
-            var lines = data.split('\n');
+            var lines = SplitLines(data);
             var updated = '';
             var numChanges = 0;
             for (var line of lines) {
@@ -272,7 +286,7 @@ function AddPhoneNumberToFile(filename, phonenumber, comment, response, callback
             console.log('Error reading from file %s: %s', filename, err);
             FailResponse(response, err);
         } else {
-            var lines = data.split('\n');
+            var lines = SplitLines(data);
             for (var line of lines) {
                 var record = ParseRecord(line);
                 if (record && record.pattern===phonenumber) {
