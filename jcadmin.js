@@ -192,14 +192,27 @@ function SplitLines(text) {
 function ParseRecentCalls(text, start, limit) {
     var calls = [];
     var total = 0;
+    var count = {};
+    var numbersInPage = {};
     for (var line of SplitLines(text).reverse()) {
         var c = ParseCallLine(line);
         if (c) {
+            if (IsPhoneNumber(c.number)) {
+                count[c.number] = (count[c.number] || 0) + 1;
+            }
             if (total >= start && calls.length < limit) {
                 c.name = GetName(c.number) || c.callid;
                 calls.push(c);
+                numbersInPage[c.number] = true;
             }
             ++total;
+        }
+    }
+
+    var trimmedCount = {};
+    for (var number in count) {
+        if (number in numbersInPage) {
+            trimmedCount[number] = count[number];
         }
     }
 
@@ -207,7 +220,8 @@ function ParseRecentCalls(text, start, limit) {
         'total': total,
         'start': start,
         'limit': limit,
-        'calls': calls
+        'calls': calls,
+        'count': trimmedCount
     };
 }
 

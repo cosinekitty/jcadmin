@@ -92,7 +92,12 @@
         var numberRow = document.getElementById('TargetNumberRow');
         var callerIdRow = document.getElementById('TargetCallerIdRow');
         var targetNameRow = document.getElementById('TargetNameRow');
-        numberRow.className = callerIdRow.className = targetNameRow.className = BlockStatusClassName(status);
+        var countRow = document.getElementById('TargetCountRow');
+        numberRow.className =
+            callerIdRow.className =
+            targetNameRow.className =
+            countRow.className =
+            BlockStatusClassName(status);
     }
 
     function SetTargetCall(call) {
@@ -104,6 +109,7 @@
         var nameEditBox   = document.getElementById('TargetNameEditBox');
         var callerIdDiv   = document.getElementById('TargetCallerIdDiv');
         var searchButton  = document.getElementById('SearchNumberButton');
+        var countDiv      = document.getElementById('TargetCountDiv');
 
         function Classify(status, phonenumber) {
             EnableDisableControls(false);
@@ -119,6 +125,7 @@
         }
 
         numberDiv.textContent = call.number;
+        countDiv.textContent = call.count;
 
         nameEditBox.value = PhoneCallDisplayName(call);
         nameEditBox.onblur = function() {
@@ -286,21 +293,23 @@
         var now = new Date();
 
         var tbody = document.createElement('tbody');
-        for (var i=0; i < recent.length; ++i) {
+        for (var call of recent) {
+            call.count = PrevPoll.callerid.data.count[call.number] || '?';
+
             var row = document.createElement('tr');
 
             var whenCell = document.createElement('td');
-            whenCell.appendChild(document.createTextNode(FormatDateTime(recent[i].when, now)));
-            whenCell.className = BlockStatusClassName(recent[i].status);
+            whenCell.appendChild(document.createTextNode(FormatDateTime(call.when, now)));
+            whenCell.className = BlockStatusClassName(call.status);
             row.appendChild(whenCell);
 
-            var originStatus = PhoneCallStatus(recent[i]);
+            var originStatus = PhoneCallStatus(call);
 
-            var numberCell = CreatePhoneNumberCell(recent[i], originStatus);
+            var numberCell = CreatePhoneNumberCell(call, originStatus);
             row.appendChild(numberCell);
 
             var nameCell = document.createElement('td');
-            var displayName = PhoneCallDisplayName(recent[i]);
+            var displayName = PhoneCallDisplayName(call);
             nameCell.appendChild(document.createTextNode(displayName));
             row.appendChild(nameCell);
 
