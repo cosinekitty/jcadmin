@@ -15,7 +15,7 @@ td, th {
     text-align: left;
 }
 
-.WhitelistedCall {
+.SafeCall {
     background: #bfb;
 }
 
@@ -23,7 +23,7 @@ td, th {
     background: #fbb;
 }
 
-.NormalCall {
+.NeutralCall {
     background: #eee;
 }
 

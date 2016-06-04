@@ -166,7 +166,7 @@ function ParseCallLine(line) {
     var m = line.match(/^([WB\-])-DATE = (\d{6})--TIME = (\d{4})--NMBR = ([^\-]*)--NAME = ([^\-]*)--$/);
     if (m) {
         return {
-            'status':   m[1],     // W, B, -; whitelisted, blocked, neither
+            'status':   {'W':'safe', 'B':'blocked'}[m[1]] || 'neutral',
             'when':     MakeDateTimeString(m[2], m[3]),
             'number':   FilterNameNumber(m[4]),
             'callid':   FilterNameNumber(m[5])
@@ -428,7 +428,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'blocked':
             RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
                 AddPhoneNumberToFile(blackListFileName, phonenumber, response, function(){
-                    EndResponse(response, {'status': 'B'});
+                    EndResponse(response, {'status': status});
                 });
             });
             break;
@@ -436,7 +436,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'neutral':
             RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
                 RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
-                    EndResponse(response, {'status': '-'});
+                    EndResponse(response, {'status': status});
                 });
             });
             break;
@@ -444,7 +444,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'safe':
             RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
                 AddPhoneNumberToFile(whiteListFileName, phonenumber, response, function(){
-                    EndResponse(response, {'status': 'W'});
+                    EndResponse(response, {'status': status});
                 });
             });
             break;

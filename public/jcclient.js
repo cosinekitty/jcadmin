@@ -133,11 +133,11 @@
         SetTargetStatus(status);
 
         switch (status) {
-            case 'B':
+            case 'blocked':
                 blockButton.checked = true;
                 break;
 
-            case 'W':
+            case 'safe':
                 safeButton.checked = true;
                 break;
 
@@ -178,7 +178,7 @@
     }
 
     function BlockStatusClassName(status) {
-        return {'W':'WhitelistedCall', 'B':'BlockedCall'}[status] || 'NormalCall';
+        return {'safe':'SafeCall', 'blocked':'BlockedCall'}[status] || 'NeutralCall';
     }
 
     function ZeroPad(n) {
@@ -205,14 +205,14 @@
         // Otherwise look in blacklist, and if found, it is blacklisted.
         // Otherwise it is neutral.
         if (PhoneListMatch(PrevPoll.whitelist.data.table, call)) {
-            return 'W';
+            return 'safe';
         }
 
         if (PhoneListMatch(PrevPoll.blacklist.data.table, call)) {
-            return 'B';
+            return 'blocked';
         }
 
-        return '-';
+        return 'neutral';
     }
 
     function SanitizeSpaces(text) {
