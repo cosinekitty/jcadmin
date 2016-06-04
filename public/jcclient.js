@@ -180,9 +180,9 @@
         return s;
     }
 
-    function PhoneListMatch(list, number, name) {
+    function PhoneListMatch(list, call) {
         for (var key in list) {
-            if (key.length > 0 && (number.indexOf(key) >= 0 || name.indexOf(key) >= 0)) {
+            if (key.length > 0 && (call.number.indexOf(key) >= 0 || call.callid.indexOf(key) >= 0)) {
                 return true;
             }
         }
@@ -195,11 +195,11 @@
         // If found, it is whitelisted.
         // Otherwise look in blacklist, and if found, it is blacklisted.
         // Otherwise it is neutral.
-        if (PhoneListMatch(PrevPoll.whitelist.data.table, call.number, call.name)) {
+        if (PhoneListMatch(PrevPoll.whitelist.data.table, call)) {
             return 'W';
         }
 
-        if (PhoneListMatch(PrevPoll.blacklist.data.table, call.number, call.name)) {
+        if (PhoneListMatch(PrevPoll.blacklist.data.table, call)) {
             return 'B';
         }
 
