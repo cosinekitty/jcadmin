@@ -123,13 +123,12 @@
                 break;
         }
 
-        function Classify(status, phonenumber, comment) {
+        function Classify(status, phonenumber) {
             EnableDisableControls(false);
 
             var url = '/api/classify/' +
                 status + '/' +
-                encodeURIComponent(phonenumber) + '/' +
-                encodeURIComponent(comment);
+                encodeURIComponent(phonenumber);
 
             ApiGet(url, function(data) {
                 numberDiv.className = BlockStatusClassName(data.status);
@@ -138,15 +137,15 @@
         }
 
         safeButton.onclick = function() {
-            Classify('safe', call.number, call.name);
+            Classify('safe', call.number);
         }
 
         neutralButton.onclick = function() {
-            Classify('neutral', call.number, call.name);
+            Classify('neutral', call.number);
         }
 
         blockButton.onclick = function() {
-            Classify('blocked', call.number, call.name);
+            Classify('blocked', call.number);
         }
 
         backButton.onclick = function(){
@@ -318,7 +317,7 @@
     }
 
     function RefreshCallHistory() {
-        ApiGet('/api/calls/0/20', function(calldata){
+        ApiGet('/api/calls/0/50', function(calldata){
             PrevPoll.callerid.data = calldata;
             UpdateUserInterface();
         });
