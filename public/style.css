@@ -50,3 +50,7 @@ td, th {
     text-align: center;
     font-family: monospace;
 }
+
+.EditBox {
+    font-size: 18px;
+}

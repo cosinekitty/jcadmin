@@ -22,13 +22,13 @@
             </tr>
 
             <tr id="TargetCallerIdRow">
-                <td>Caller ID:</td>
+                <td>CID:</td>
                 <td><div id="TargetCallerIdDiv"></div></td>
             </tr>
 
             <tr id="TargetNameRow">
                 <td>Name:</td>
-                <td><input id="TargetNameEditBox" type="text" value="" size="30" maxlength="80"></td>
+                <td><input id="TargetNameEditBox" class="EditBox" type="text" value="" size="20" maxlength="80"></td>
             </tr>
         </table>
 
@@ -38,17 +38,20 @@
 
         <div class="NavSection">
             <form action="">
-                <input type="radio" name="TargetStatus" value="Safe" id="TargetRadioButtonSafe">
-                <label for="TargetRadioButtonSafe">Safe</label>
-                <br>
+                <div class="NavSection NavButton">
+                    <input type="radio" name="TargetStatus" value="Safe" id="TargetRadioButtonSafe">
+                    <label for="TargetRadioButtonSafe">Safe</label>
+                </div>
 
-                <input type="radio" name="TargetStatus" value="Neutral" id="TargetRadioButtonNeutral">
-                <label for="TargetRadioButtonNeutral">Neutral</label>
-                <br>
+                <div class="NavSection NavButton">
+                    <input type="radio" name="TargetStatus" value="Neutral" id="TargetRadioButtonNeutral">
+                    <label for="TargetRadioButtonNeutral">Neutral</label>
+                </div>
 
-                <input type="radio" name="TargetStatus" value="Blocked" id="TargetRadioButtonBlocked">
-                <label for="TargetRadioButtonBlocked">Blocked</label>
-                <br>
+                <div class="NavSection NavButton">
+                    <input type="radio" name="TargetStatus" value="Blocked" id="TargetRadioButtonBlocked">
+                    <label for="TargetRadioButtonBlocked">Blocked</label>
+                </div>
             </form>
         </div>
     </div>
