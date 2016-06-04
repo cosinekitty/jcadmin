@@ -88,6 +88,13 @@
         });
     }
 
+    function SetTargetStatus(status) {
+        var numberRow = document.getElementById('TargetNumberRow');
+        var callerIdRow = document.getElementById('TargetCallerIdRow');
+        var targetNameRow = document.getElementById('TargetNameRow');
+        numberRow.className = callerIdRow.className = targetNameRow.className = BlockStatusClassName(status);
+    }
+
     function SetTargetCall(call) {
         var backButton    = document.getElementById('BackToListButton');
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
@@ -95,7 +102,21 @@
         var blockButton   = document.getElementById('TargetRadioButtonBlocked');
         var numberDiv     = document.getElementById('TargetNumberDiv');
         var nameEditBox   = document.getElementById('TargetNameEditBox');
+        var callerIdDiv   = document.getElementById('TargetCallerIdDiv');
         var searchButton  = document.getElementById('SearchNumberButton');
+
+        function Classify(status, phonenumber) {
+            EnableDisableControls(false);
+
+            var url = '/api/classify/' +
+                encodeURIComponent(status) + '/' +
+                encodeURIComponent(phonenumber);
+
+            ApiGet(url, function(data) {
+                SetTargetStatus(data.status);
+                EnableDisableControls(true);
+            });
+        }
 
         numberDiv.textContent = call.number;
 
@@ -104,10 +125,12 @@
             SaveName(call, nameEditBox.value);
         }
 
+        callerIdDiv.textContent = call.callid;
+
         searchButton.innerHTML = '<a href="http://www.google.com/search?q=' + encodeURIComponent(call.number) + '" target="_blank">Search Google</a>';
 
         var status = PhoneCallStatus(call);
-        numberDiv.className = BlockStatusClassName(status);
+        SetTargetStatus(status);
 
         switch (status) {
             case 'B':
@@ -121,19 +144,6 @@
             default:
                 neutralButton.checked = true;
                 break;
-        }
-
-        function Classify(status, phonenumber) {
-            EnableDisableControls(false);
-
-            var url = '/api/classify/' +
-                status + '/' +
-                encodeURIComponent(phonenumber);
-
-            ApiGet(url, function(data) {
-                numberDiv.className = BlockStatusClassName(data.status);
-                EnableDisableControls(true);
-            });
         }
 
         safeButton.onclick = function() {
