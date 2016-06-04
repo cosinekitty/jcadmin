@@ -30,7 +30,8 @@
     }
 
     // A list of all mutually-exclusive elements (only one is visible at a time):
-    var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv'];
+    var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv', 'LostContactDiv'];
+    var LostContactCount = 0;
 
     var PollTimer = null;
     var PrevPoll = {
@@ -351,6 +352,14 @@
 
     function PollCallerId() {
         ApiGet('/api/poll', function(poll){
+            // On success.
+
+            if (LostContactCount > 0) {
+                LostContactCount = 0;
+                SetActiveDiv('RecentCallsDiv');
+            }
+
+            // check last-modified time stamps to see if we need to re-fetch the model.
             if (PrevPoll.callerid.modified !== poll.callerid.modified ||
                 PrevPoll.database.modified !== poll.database.modified) {
                 PrevPoll.callerid.modified = poll.callerid.modified;
@@ -366,6 +375,16 @@
             if (PrevPoll.blacklist.modified !== poll.blacklist.modified) {
                 PrevPoll.blacklist.modified = poll.blacklist.modified;
                 RefreshPhoneList('blacklist');
+            }
+
+            PollTimer = window.setTimeout(PollCallerId, 2000);
+        },
+        function(request) {
+            // On failure, go into Lost Contact mode but keep polling for reconnect.
+            ++LostContactCount;
+            document.getElementById('RetryCountSpan').textContent = LostContactCount;
+            if (LostContactCount == 1) {
+                SetActiveDiv('LostContactDiv');
             }
             PollTimer = window.setTimeout(PollCallerId, 2000);
         });
