@@ -54,3 +54,7 @@ td, th {
 .EditBox {
     font-size: 18px;
 }
+
+.IconColumn {
+    width: 24px;
+}

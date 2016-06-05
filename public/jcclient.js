@@ -277,6 +277,10 @@
         var thead = document.createElement('thead');
         var hrow = document.createElement('tr');
 
+        var hcell_icon = document.createElement('th');
+        hcell_icon.className = 'IconColumn';
+        hrow.appendChild(hcell_icon);
+
         var hcell_when = document.createElement('th');
         hcell_when.appendChild(document.createTextNode('When'));
         hrow.appendChild(hcell_when);
@@ -296,12 +300,24 @@
         var tbody = document.createElement('tbody');
         for (var call of recent) {
             call.count = PrevPoll.callerid.data.count[call.number] || '?';
+            var callStatusClassName = BlockStatusClassName(call.status);
 
             var row = document.createElement('tr');
 
+            var iconCell = document.createElement('td');
+            if (call.status === 'blocked' || call.status === 'safe') {
+                var iconImg = document.createElement('img');
+                iconImg.setAttribute('src', call.status + '.png');
+                iconImg.setAttribute('width', '24');
+                iconImg.setAttribute('height', '24');
+                iconCell.appendChild(iconImg);
+            }
+            iconCell.className = callStatusClassName;
+            row.appendChild(iconCell);
+
             var whenCell = document.createElement('td');
             whenCell.appendChild(document.createTextNode(FormatDateTime(call.when, now)));
-            whenCell.className = BlockStatusClassName(call.status);
+            whenCell.className = callStatusClassName;
             row.appendChild(whenCell);
 
             var originStatus = PhoneCallStatus(call);
