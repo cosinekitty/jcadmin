@@ -141,48 +141,29 @@
         SetTargetStatus(status);
 
         switch (status) {
-            case 'blocked':
-                blockButton.checked = true;
-                break;
-
-            case 'safe':
-                safeButton.checked = true;
-                break;
-
-            default:
-                neutralButton.checked = true;
-                break;
+            case 'blocked': blockButton.checked = true;     break;
+            case 'safe':    safeButton.checked = true;      break;
+            default:        neutralButton.checked = true;   break;
         }
 
-        safeButton.onclick = function() {
-            Classify('safe', call.number);
-        }
-
-        neutralButton.onclick = function() {
-            Classify('neutral', call.number);
-        }
-
-        blockButton.onclick = function() {
-            Classify('blocked', call.number);
-        }
-
-        backButton.onclick = function(){
-            SetActiveDiv('RecentCallsDiv');
-        }
-
+        safeButton.onclick    = function() { Classify('safe',    call.number); }
+        neutralButton.onclick = function() { Classify('neutral', call.number); }
+        blockButton.onclick   = function() { Classify('blocked', call.number); }
+        backButton.onclick    = function() { SetActiveDiv('RecentCallsDiv'); }
         EnableDisableControls(true);
         SetActiveDiv('TargetCallDiv');
     }
 
-    function CreatePhoneNumberCell(call, status) {
-        var numberCell = document.createElement('td');
+    function CreateCallerCell(call, status) {
+        var callerCell = document.createElement('td');
         if (call.number !== '') {
-            numberCell.textContent = call.number;
-            numberCell.onclick = function() {
+            callerCell.textContent = SanitizeSpaces(call.name) || SanitizeSpaces(call.callid) || SanitizeSpaces(call.number);
+            callerCell.className = BlockStatusClassName(PhoneCallStatus(call));
+            callerCell.onclick = function() {
                 SetTargetCall(call);
             }
         }
-        return numberCell;
+        return callerCell;
     }
 
     function BlockStatusClassName(status) {
@@ -285,12 +266,8 @@
         hcell_when.appendChild(document.createTextNode('When'));
         hrow.appendChild(hcell_when);
 
-        var hcell_number = document.createElement('th');
-        hcell_number.appendChild(document.createTextNode('Number'));
-        hrow.appendChild(hcell_number);
-
         var hcell_name = document.createElement('th');
-        hcell_name.appendChild(document.createTextNode('Name'));
+        hcell_name.appendChild(document.createTextNode('Caller'));
         hrow.appendChild(hcell_name);
 
         thead.appendChild(hrow);
@@ -320,17 +297,7 @@
             whenCell.className = callStatusClassName;
             row.appendChild(whenCell);
 
-            var originStatus = PhoneCallStatus(call);
-
-            var numberCell = CreatePhoneNumberCell(call, originStatus);
-            row.appendChild(numberCell);
-
-            var nameCell = document.createElement('td');
-            var displayName = PhoneCallDisplayName(call);
-            nameCell.appendChild(document.createTextNode(displayName));
-            row.appendChild(nameCell);
-
-            numberCell.className = nameCell.className = BlockStatusClassName(originStatus);
+            row.appendChild(CreateCallerCell(call));
 
             tbody.appendChild(row);
         }
