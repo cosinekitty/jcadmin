@@ -233,15 +233,9 @@ function ParseIntParam(text, fallback) {
     return value;
 }
 
-function EndResponse(response, result) {
-    response.type('json');
-    response.end(JSON.stringify(result));
-}
-
 function FailResponse(response, error) {
     console.log('FailResponse: %s', error);
-    response.type('json');
-    EndResponse(response, {'error': error});
+    response.json({'error': error});
 }
 
 app.get('/api/poll', (request, response) => {
@@ -256,12 +250,12 @@ app.get('/api/poll', (request, response) => {
 
     function StatCallback(err, stats, reply, field) {
         if (err) {
-            EndResponse(response, { 'error':err, 'field':field });
+            response.json({ 'error':err, 'field':field });
         } else {
             if (!reply.error) {
                 reply[field] = { 'modified' : stats.mtime };
                 if (reply.callerid && reply.whitelist && reply.blacklist && reply.database) {
-                    EndResponse(response, reply);
+                    response.json(reply);
                 }
             }
         }
@@ -280,7 +274,7 @@ app.get('/api/calls/:start/:limit', (request, response) => {
         if (err) {
             FailResponse(response, err);
         } else {
-            EndResponse(response, ParseRecentCalls(data, start, limit));
+            response.json(ParseRecentCalls(data, start, limit));
         }
     });
 });
@@ -307,7 +301,7 @@ app.get('/api/fetch/:filetype', (request, response) => {
                     reply.table[record.pattern] = record.comment;
                 }
             }
-            EndResponse(response, reply);
+            response.json(reply);
         }
     });
 });
@@ -408,7 +402,7 @@ app.get('/api/rename/:phonenumber/:name?', (request, response) => {
         var newname = (request.params.name || '').trim();
         if (newname === oldname) {
             // Avoid unnecessary file I/O: nothing has changed, so no need to save.
-            EndResponse(response, success);
+            response.json(success);
         } else if (newname.length > MaxNameLength) {
             FailResponse(response, `Name length must not exceed ${MaxNameLength} characters.`);
         } else {
@@ -418,7 +412,7 @@ app.get('/api/rename/:phonenumber/:name?', (request, response) => {
                     FailResponse(response, err);
                 } else {
                     console.log(`Renamed ${number} from "${oldname}" to "${newname}"`);
-                    EndResponse(response, success);
+                    response.json(success);
                 }
             });
         }
@@ -442,7 +436,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'blocked':
             RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
                 AddPhoneNumberToFile(blackListFileName, phonenumber, response, function(){
-                    EndResponse(response, {'status': status});
+                    response.json({'status': status});
                 });
             });
             break;
@@ -450,7 +444,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'neutral':
             RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
                 RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
-                    EndResponse(response, {'status': status});
+                    response.json({'status': status});
                 });
             });
             break;
@@ -458,7 +452,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'safe':
             RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
                 AddPhoneNumberToFile(whiteListFileName, phonenumber, response, function(){
-                    EndResponse(response, {'status': status});
+                    response.json({'status': status});
                 });
             });
             break;
