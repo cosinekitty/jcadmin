@@ -35,32 +35,32 @@
 
     var PollTimer = null;
     var PrevPoll = {
-        'callerid':  {
-            'modified': '',
-            'data': {
-                'calls': [],
-                'limit': 0,
-                'start': 0,
-                'total': 0,
+        callerid:  {
+            modified: '',
+            data: {
+                calls: [],
+                limit: 0,
+                start: 0,
+                total: 0,
             }
         },
 
-        'whitelist': {
-            'modified': '',
-            'data': {
-                'table': {}
+        whitelist: {
+            modified: '',
+            data: {
+                table: {}
             }
         },
 
-        'blacklist': {
-            'modified': '',
-            'data':{
-                'table': {}
+        blacklist: {
+            modified: '',
+            data: {
+                table: {}
             }
         },
 
-        'database': {
-            'modified': ''
+        database: {
+            modified: ''
         }
     };
 
@@ -128,9 +128,9 @@
         numberDiv.textContent = call.number;
         countDiv.textContent = call.count;
 
-        nameEditBox.value = PhoneCallDisplayName(call);
+        nameEditBox.value = SanitizeSpaces(call.name);
         nameEditBox.onblur = function() {
-            SaveName(call, nameEditBox.value);
+            SaveName(call, SanitizeSpaces(nameEditBox.value));
         }
 
         callerIdDiv.textContent = call.callid;
@@ -167,7 +167,7 @@
     }
 
     function BlockStatusClassName(status) {
-        return {'safe':'SafeCall', 'blocked':'BlockedCall'}[status] || 'NeutralCall';
+        return {safe:'SafeCall', blocked:'BlockedCall'}[status] || 'NeutralCall';
     }
 
     function ZeroPad(n) {
@@ -207,10 +207,6 @@
     function SanitizeSpaces(text) {
         // Replace redundant white space with a single space and trim outside spaces.
         return text ? text.replace(/\s+/g, ' ').trim() : '';
-    }
-
-    function PhoneCallDisplayName(call) {
-        return SanitizeSpaces(call.name);
     }
 
     function FormatDateTime(when, now) {

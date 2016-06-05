@@ -122,8 +122,8 @@ function InitDatabase(filename) {
     }
 
     return {
-        'filename': filename,
-        'data': data
+        filename: filename,
+        data: data
     };
 }
 
@@ -153,8 +153,8 @@ function MakeDateTimeString(date, time) {
 
 function FilterNameNumber(text) {
     text = text.trim();
-    if (text == "O") {
-        return "";
+    if (text == 'O') {
+        return '';
     }
     return text;
 }
@@ -166,10 +166,10 @@ function ParseCallLine(line) {
     var m = line.match(/^([WB\-])-DATE = (\d{6})--TIME = (\d{4})--NMBR = ([^\-]*)--NAME = ([^\-]*)--$/);
     if (m) {
         return {
-            'status':   {'W':'safe', 'B':'blocked'}[m[1]] || 'neutral',
-            'when':     MakeDateTimeString(m[2], m[3]),
-            'number':   FilterNameNumber(m[4]),
-            'callid':   FilterNameNumber(m[5])
+            status:   {W:'safe', B:'blocked'}[m[1]] || 'neutral',
+            when:     MakeDateTimeString(m[2], m[3]),
+            number:   FilterNameNumber(m[4]),
+            callid:   FilterNameNumber(m[5])
         };
     }
     return null;
@@ -217,11 +217,11 @@ function ParseRecentCalls(text, start, limit) {
     }
 
     return {
-        'total': total,
-        'start': start,
-        'limit': limit,
-        'calls': calls,
-        'count': trimmedCount
+        total: total,
+        start: start,
+        limit: limit,
+        calls: calls,
+        count: trimmedCount
     };
 }
 
@@ -233,9 +233,11 @@ function ParseIntParam(text, fallback) {
     return value;
 }
 
-function FailResponse(response, error) {
-    console.log('FailResponse: %s', error);
-    response.json({'error': error});
+function FailResponse(response, error, template) {
+    template = template || {};
+    template.error = error;
+    console.log('FailResponse: %s', template);
+    response.json(template);
 }
 
 app.get('/api/poll', (request, response) => {
@@ -250,10 +252,10 @@ app.get('/api/poll', (request, response) => {
 
     function StatCallback(err, stats, reply, field) {
         if (err) {
-            response.json({ 'error':err, 'field':field });
+            FailResponse(response, err, {field:field});
         } else {
             if (!reply.error) {
-                reply[field] = { 'modified' : stats.mtime };
+                reply[field] = {modified : stats.mtime};
                 if (reply.callerid && reply.whitelist && reply.blacklist && reply.database) {
                     response.json(reply);
                 }
@@ -293,7 +295,7 @@ app.get('/api/fetch/:filetype', (request, response) => {
         if (err) {
             FailResponse(response, err);
         } else {
-            reply = { 'table' : {} };
+            reply = {table: {}};
             var lines = SplitLines(data);
             for (var line of lines) {
                 var record = ParseRecord(line);
@@ -322,9 +324,10 @@ function ParseRecord(line) {
     if (!line.startsWith('#') && (line.length >= 25)) {
         var limit = line.indexOf('?');
         if (limit < 0) limit = 19;
-        var pattern = line.substr(0, limit).trim();
-        var comment = line.substr(25).trim();
-        return { 'pattern':pattern, 'comment':comment };
+        return {
+            pattern: line.substr(0, limit).trim(), 
+            comment: line.substr(25).trim()
+        };
     }
     return null;
 }
@@ -397,7 +400,7 @@ app.get('/api/rename/:phonenumber/:name?', (request, response) => {
     if (!IsPhoneNumber(number)) {
         FailResponse(response, 'Invalid phone number');
     } else {
-        var success = {'status': 'OK'};     // idempotence: same reply whether state changed or not
+        var success = {status: 'OK'};     // idempotence: same reply whether state changed or not
         var oldname = GetName(number);
         var newname = (request.params.name || '').trim();
         if (newname === oldname) {
@@ -436,7 +439,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'blocked':
             RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
                 AddPhoneNumberToFile(blackListFileName, phonenumber, response, function(){
-                    response.json({'status': status});
+                    response.json({status: status});
                 });
             });
             break;
@@ -444,7 +447,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'neutral':
             RemovePhoneNumberFromFile(whiteListFileName, phonenumber, response, function(){
                 RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
-                    response.json({'status': status});
+                    response.json({status: status});
                 });
             });
             break;
@@ -452,7 +455,7 @@ app.get('/api/classify/:status/:phonenumber', (request, response) => {
         case 'safe':
             RemovePhoneNumberFromFile(blackListFileName, phonenumber, response, function(){
                 AddPhoneNumberToFile(whiteListFileName, phonenumber, response, function(){
-                    response.json({'status': status});
+                    response.json({status: status});
                 });
             });
             break;
