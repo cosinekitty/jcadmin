@@ -58,3 +58,11 @@ td, th {
 .IconColumn {
     width: 24px;
 }
+
+.WhenCell {
+    white-space: nowrap;
+}
+
+.CallerColumn {
+    width: 100%;
+}

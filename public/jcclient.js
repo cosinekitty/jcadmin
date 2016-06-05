@@ -268,6 +268,7 @@
 
         var hcell_name = document.createElement('th');
         hcell_name.appendChild(document.createTextNode('Caller'));
+        hcell_name.className = 'CallerColumn';
         hrow.appendChild(hcell_name);
 
         thead.appendChild(hrow);
@@ -294,7 +295,7 @@
 
             var whenCell = document.createElement('td');
             whenCell.appendChild(document.createTextNode(FormatDateTime(call.when, now)));
-            whenCell.className = callStatusClassName;
+            whenCell.className = callStatusClassName + ' WhenCell';
             row.appendChild(whenCell);
 
             row.appendChild(CreateCallerCell(call));
