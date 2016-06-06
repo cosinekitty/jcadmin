@@ -45,14 +45,14 @@
             }
         },
 
-        whitelist: {
+        safe: {
             modified: '',
             data: {
                 table: {}
             }
         },
 
-        blacklist: {
+        blocked: {
             modified: '',
             data: {
                 table: {}
@@ -189,11 +189,11 @@
         // If found, it is whitelisted.
         // Otherwise look in blacklist, and if found, it is blacklisted.
         // Otherwise it is neutral.
-        if (PhoneListMatch(PrevPoll.whitelist.data.table, call)) {
+        if (PhoneListMatch(PrevPoll.safe.data.table, call)) {
             return 'safe';
         }
 
-        if (PhoneListMatch(PrevPoll.blacklist.data.table, call)) {
+        if (PhoneListMatch(PrevPoll.blocked.data.table, call)) {
             return 'blocked';
         }
 
@@ -341,14 +341,14 @@
                 RefreshCallHistory();
             }
 
-            if (PrevPoll.whitelist.modified !== poll.whitelist.modified) {
-                PrevPoll.whitelist.modified = poll.whitelist.modified;
-                RefreshPhoneList('whitelist');
+            if (PrevPoll.safe.modified !== poll.safe.modified) {
+                PrevPoll.safe.modified = poll.safe.modified;
+                RefreshPhoneList('safe');
             }
 
-            if (PrevPoll.blacklist.modified !== poll.blacklist.modified) {
-                PrevPoll.blacklist.modified = poll.blacklist.modified;
-                RefreshPhoneList('blacklist');
+            if (PrevPoll.blocked.modified !== poll.blocked.modified) {
+                PrevPoll.blocked.modified = poll.blocked.modified;
+                RefreshPhoneList('blocked');
             }
 
             PollTimer = window.setTimeout(PollCallerId, 2000);

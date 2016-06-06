@@ -113,7 +113,7 @@ function InitDatabase(filename) {
         // So process caller ID first, blacklist second, whitelist last.
         // We want the whitelist entry to trump the blacklist entry if both are present
         // for the same phone number.  That should never happen, but we can't prevent it.
-        data = { 'callername': {} };
+        data = { callername: {} };
         LoadCallerLog(data, jcLogFile);
         LoadListFile(data, blackListFileName);
         LoadListFile(data, whiteListFileName);
@@ -260,7 +260,7 @@ app.get('/api/poll', (request, response) => {
         } else {
             if (!reply.error) {
                 reply[field] = {modified : stats.mtime};
-                if (reply.callerid && reply.whitelist && reply.blacklist && reply.database) {
+                if (reply.callerid && reply.safe && reply.blocked && reply.database) {
                     // The database (jcadmin.json) and the callerID.dat are conceptually
                     // a single model from the client's point of view: together they provide
                     // a list of all the phone calls along with user-defined names for each call.
@@ -271,8 +271,8 @@ app.get('/api/poll', (request, response) => {
 
                     response.json({
                         callerid: LaterStat(reply.callerid, reply.database),
-                        whitelist: reply.whitelist,
-                        blacklist: reply.blacklist
+                        safe: reply.safe,
+                        blocked: reply.blocked
                     });
                 }
             }
@@ -280,8 +280,8 @@ app.get('/api/poll', (request, response) => {
     }
 
     fs.stat(jcLogFile,         (err, stats) => StatCallback(err, stats, reply, 'callerid' ));
-    fs.stat(whiteListFileName, (err, stats) => StatCallback(err, stats, reply, 'whitelist'));
-    fs.stat(blackListFileName, (err, stats) => StatCallback(err, stats, reply, 'blacklist'));
+    fs.stat(whiteListFileName, (err, stats) => StatCallback(err, stats, reply, 'safe'));
+    fs.stat(blackListFileName, (err, stats) => StatCallback(err, stats, reply, 'blocked'));
     fs.stat(database.filename, (err, stats) => StatCallback(err, stats, reply, 'database'));
 });
 
@@ -300,8 +300,8 @@ app.get('/api/calls/:start/:limit', (request, response) => {
 app.get('/api/fetch/:filetype', (request, response) => {
     var filename;
     switch (request.params.filetype) {
-        case 'whitelist':  filename = whiteListFileName;  break;
-        case 'blacklist':  filename = blackListFileName;  break;
+        case 'safe':     filename = whiteListFileName;  break;
+        case 'blocked':  filename = blackListFileName;  break;
         default:
             FailResponse(response, 'Invalid filetype ' + request.params.filetype);
             return;
