@@ -250,6 +250,10 @@ app.get('/api/poll', (request, response) => {
     // Start multiple async requests. The the first one to encounter an error
     // or the last one to succeed ends the response for us.
 
+    function LaterStat(a, b) {
+        return (a.modified > b.modified) ? a : b;
+    }
+
     function StatCallback(err, stats, reply, field) {
         if (err) {
             FailResponse(response, err, {field:field});
@@ -257,7 +261,19 @@ app.get('/api/poll', (request, response) => {
             if (!reply.error) {
                 reply[field] = {modified : stats.mtime};
                 if (reply.callerid && reply.whitelist && reply.blacklist && reply.database) {
-                    response.json(reply);
+                    // The database (jcadmin.json) and the callerID.dat are conceptually
+                    // a single model from the client's point of view: together they provide
+                    // a list of all the phone calls along with user-defined names for each call.
+                    // So for the purposes of polling, we pick the most recent modification
+                    // of (callerid, database) modified date and report it as callerid modified date.
+                    // In simpler terms, when either changes, the client wants to reload
+                    // /api/calls to get latest calls and names.
+
+                    response.json({
+                        callerid: LaterStat(reply.callerid, reply.database),
+                        whitelist: reply.whitelist,
+                        blacklist: reply.blacklist
+                    });
                 }
             }
         }
@@ -325,7 +341,7 @@ function ParseRecord(line) {
         var limit = line.indexOf('?');
         if (limit < 0) limit = 19;
         return {
-            pattern: line.substr(0, limit).trim(), 
+            pattern: line.substr(0, limit).trim(),
             comment: line.substr(25).trim()
         };
     }

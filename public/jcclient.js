@@ -58,10 +58,6 @@
                 table: {}
             }
         },
-
-        database: {
-            modified: ''
-        }
     };
 
     function SetActiveDiv(activeDivId) {
@@ -340,10 +336,8 @@
             }
 
             // check last-modified time stamps to see if we need to re-fetch the model.
-            if (PrevPoll.callerid.modified !== poll.callerid.modified ||
-                PrevPoll.database.modified !== poll.database.modified) {
+            if (PrevPoll.callerid.modified !== poll.callerid.modified) {
                 PrevPoll.callerid.modified = poll.callerid.modified;
-                PrevPoll.database.modified = poll.database.modified;
                 RefreshCallHistory();
             }
 
