@@ -6,26 +6,32 @@
 
 (function(){
     function ApiGet(path, onSuccess, onFailure) {
+        var handled = false;
         var request = new XMLHttpRequest();
         request.onreadystatechange = function(){
-            if (request.readyState === XMLHttpRequest.DONE) {
-                if (request.status === 200) {
-                    var responseJson = JSON.parse(request.responseText);
-                    if (!responseJson.error) {
-                        onSuccess && onSuccess(responseJson);
+            if (!handled) {
+                if (request.readyState === XMLHttpRequest.DONE) {
+                    handled = true;
+                    if (request.status === 200) {
+                        var responseJson = JSON.parse(request.responseText);
+                        if (!responseJson.error) {
+                            onSuccess && onSuccess(responseJson);
+                        } else {
+                            console.log('ApiGet returned error object for %s :', path);
+                            console.log(responseJson.error);
+                            onFailure && onFailure(request);
+                        }
                     } else {
-                        console.log('ApiGet returned error object for %s :', path);
-                        console.log(responseJson.error);
+                        console.log('ApiGet failure for %s :', path);
+                        console.log(request);
                         onFailure && onFailure(request);
                     }
-                } else {
-                    console.log('ApiGet failure for %s :', path);
-                    console.log(request);
-                    onFailure && onFailure(request);
                 }
             }
         };
+
         request.open('GET', path);
+        request.timeout = 1000;
         request.send(null);
     }
 
