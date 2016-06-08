@@ -39,6 +39,21 @@
     var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv', 'LostContactDiv'];
     var LostContactCount = 0;
 
+    // For toggling display of various types of call history rows.
+    var DisplayRowsOfType = {
+        neutral: true,
+        blocked: true,
+        safe: true
+    };
+
+    function UpdateRowDisplay(callHistoryRows) {   // call to reflect current DisplayRowsOfType settings
+        for (var i=0; i < callHistoryRows.length; ++i) {
+            var row = callHistoryRows[i];
+            var status = row.getAttribute('data-caller-status');
+            row.style.display = DisplayRowsOfType[status] ? '' : 'none';
+        }
+    }
+
     var PollTimer = null;
     var PrevPoll = {
         callerid:  {
@@ -249,6 +264,7 @@
     }
 
     function PopulateCallHistory() {
+        var rowlist = [];
         var recent = PrevPoll.callerid.data.calls;
         var table = document.createElement('table');
         table.setAttribute('class', 'RecentCallTable');
@@ -258,6 +274,18 @@
 
         var hcell_icon = document.createElement('th');
         hcell_icon.className = 'IconColumn';
+        var toggleIconImage = document.createElement('img');
+        toggleIconImage.setAttribute('src', 'safe.png');
+        toggleIconImage.setAttribute('width', '24');
+        toggleIconImage.setAttribute('height', '24');
+        toggleIconImage.style.display = DisplayRowsOfType.blocked ? 'none' : '';
+        hcell_icon.appendChild(toggleIconImage);
+        hcell_icon.onclick = function() {
+            // Toggle display of blocked callers.
+            DisplayRowsOfType.blocked = !DisplayRowsOfType.blocked;
+            toggleIconImage.style.display = DisplayRowsOfType.blocked ? 'none' : '';
+            UpdateRowDisplay(rowlist);
+        }
         hrow.appendChild(hcell_icon);
 
         var hcell_when = document.createElement('th');
@@ -274,11 +302,13 @@
         var now = new Date();
 
         var tbody = document.createElement('tbody');
-        for (var call of recent) {
+        for (var i=0; i < recent.length; ++i) {
+            var call = recent[i];
             call.count = PrevPoll.callerid.data.count[call.number] || '?';
             var callStatusClassName = BlockStatusClassName(call.status);
 
             var row = document.createElement('tr');
+            row.setAttribute('data-caller-status', CallerStatus(call));
 
             var iconCell = document.createElement('td');
             if (call.status === 'blocked' || call.status === 'safe') {
@@ -299,6 +329,7 @@
             row.appendChild(CreateCallerCell(call));
 
             tbody.appendChild(row);
+            rowlist.push(row);
         }
 
         table.appendChild(thead);
@@ -312,6 +343,7 @@
 
         // Fill in newly-generted content for the RecentCallsDiv...
         rcdiv.appendChild(table);
+        UpdateRowDisplay(rowlist);
     }
 
     function UpdateUserInterface() {
