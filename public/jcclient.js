@@ -139,7 +139,7 @@
 
         searchButton.innerHTML = '<a href="http://www.google.com/search?q=' + encodeURIComponent(call.number) + '" target="_blank">Search Google</a>';
 
-        var status = PhoneCallStatus(call);
+        var status = CallerStatus(call);
         SetTargetStatus(status);
 
         switch (status) {
@@ -160,7 +160,7 @@
         var callerCell = document.createElement('td');
         if (call.number !== '') {
             callerCell.textContent = SanitizeSpaces(call.name) || SanitizeSpaces(call.callid) || SanitizeSpaces(call.number);
-            callerCell.className = BlockStatusClassName(PhoneCallStatus(call));
+            callerCell.className = BlockStatusClassName(CallerStatus(call));
             callerCell.onclick = function() {
                 SetTargetCall(call);
             }
@@ -189,7 +189,7 @@
         return false;
     }
 
-    function PhoneCallStatus(call) {
+    function CallerStatus(call) {
         // Emulate jcblock's rules for whitelisting and blacklisting.
         // First look in the whitelist for any pattern match with name or number.
         // If found, it is whitelisted.
