@@ -36,7 +36,7 @@
     }
 
     // A list of all mutually-exclusive elements (only one is visible at a time):
-    var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv', 'LostContactDiv'];
+    var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv', 'LostContactDiv', 'CreateEditNumberDiv'];
     var LostContactCount = 0;
 
     // For toggling display of various types of call history rows.
@@ -118,6 +118,20 @@
             BlockStatusClassName(status);
     }
 
+    function IsPhoneNumber(pattern) {
+        return pattern && pattern.match(/^[0-9]{7,11}$/);
+    }
+
+    function SanitizePhoneNumber(pattern) {
+        if (pattern) {
+            var cleaned = pattern.replace(/[^0-9]/g, '');
+            if (IsPhoneNumber(cleaned)) {
+                return cleaned;
+            }
+        }
+        return null;
+    }
+
     function SetTargetCall(call) {
         var backButton    = document.getElementById('BackToListButton');
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
@@ -171,8 +185,59 @@
         SetActiveDiv('TargetCallDiv');
     }
 
+    function CreateNewCaller() {
+        var cancelButton = document.getElementById('CancelCreateEditButton');
+        var editButton = document.getElementById('TryCreateEditButton');
+        var editBox = document.getElementById('NumberEditBox');
+
+        editButton.style.display = 'none';      // do not show until valid number appears in edit box
+
+        editBox.value = '';     // clear out any previously entered phone number
+        editBox.focus();
+
+        cancelButton.onclick = function() { SetActiveDiv('RecentCallsDiv'); }
+
+        function TryToCreateEditNumber(number) {
+            // Check the server for any existing data for this phone number.
+            ApiGet('/api/caller/' + encodeURIComponent(number), function(data) {
+                SetTargetCall(data.call);
+            });
+        }
+
+        editButton.onclick = function(evt) {
+            var number = SanitizePhoneNumber(editBox.value);
+            if (number !== null) {
+                TryToCreateEditNumber(number);
+            } else {
+                // Should never get here!!!
+                console.log('How did the edit button get clicked with an invalid number?')
+            }
+        }
+
+        editBox.onkeyup = function(evt) {
+            var number = SanitizePhoneNumber(editBox.value);
+            var key = evt.keyCode;
+            if (number !== null) {
+                // Show the edit button.
+                editButton.style.display = '';
+
+                // If user just pressed ENTER, act as if edit button was pressed: go to target page.
+                if (key === 13) {
+                    TryToCreateEditNumber(number);
+                }
+            } else {
+                // Hide the edit button.
+                // If user just pressed ENTER, ignore it!
+                editButton.style.display = 'none';
+            }
+        }
+
+        SetActiveDiv('CreateEditNumberDiv');
+    }
+
     function CreateCallerCell(call, status) {
         var callerCell = document.createElement('td');
+        callerCell.setAttribute('colspan', '2');
         if (call.number !== '') {
             callerCell.textContent = SanitizeSpaces(call.name) || SanitizeSpaces(call.callid) || SanitizeSpaces(call.number);
             callerCell.className = BlockStatusClassName(CallerStatus(call));
@@ -295,6 +360,16 @@
         hcell_name.appendChild(document.createTextNode('Caller'));
         hcell_name.className = 'CallerColumn';
         hrow.appendChild(hcell_name);
+
+        var hcell_new = document.createElement('th');
+        hcell_new.className = 'IconColumn';
+        var newIcon = document.createElement('img');
+        newIcon.setAttribute('src', 'new.png');
+        newIcon.setAttribute('width', '24');
+        newIcon.setAttribute('height', '24');
+        hcell_new.appendChild(newIcon);
+        hcell_new.onclick = CreateNewCaller;
+        hrow.appendChild(hcell_new);
 
         thead.appendChild(hrow);
 

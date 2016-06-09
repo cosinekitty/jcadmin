@@ -297,6 +297,46 @@ app.get('/api/calls/:start/:limit', (request, response) => {
     });
 });
 
+app.get('/api/caller/:phonenumber', (request, response) => {
+    if (!IsPhoneNumber(request.params.phonenumber)) {
+        FailResponse(response, 'Not a valid phone number.');
+        return;
+    }
+
+    // Search for any information we know about this phone number.
+    // Process the entire caller ID log and see if the number is there.
+    fs.readFile(jcLogFile, 'utf8', (err, data) => {
+        if (err) {
+            FailResponse(response, err);
+        } else {
+            var recent = ParseRecentCalls(data, 0, 1000000000);
+            for (var i=0; i < recent.calls.length; ++i) {
+                var call = recent.calls[i];
+                if (call.number === request.params.phonenumber) {
+                    // Return the most recent instance of the call.
+                    call.count = recent.count[request.params.phonenumber];
+                    response.json({call: call});
+                    return;
+                }
+            }
+
+            // Getting here means we have never received a call from this number.
+            // However, we may or may not have an entry for it in the database:
+            // the user might have created a record for it already.
+            var call = {
+                status:   'neutral',
+                when:     '',   // never called
+                number:   request.params.phonenumber,
+                callid:   '',   // never called
+                name:     GetName(request.params.phonenumber),
+                count:    0
+            };
+
+            response.json({call: call});
+        }
+    });
+});
+
 app.get('/api/fetch/:filetype', (request, response) => {
     var filename;
     switch (request.params.filetype) {
