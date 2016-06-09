@@ -275,15 +275,14 @@
         var hcell_icon = document.createElement('th');
         hcell_icon.className = 'IconColumn';
         var toggleIconImage = document.createElement('img');
-        toggleIconImage.setAttribute('src', 'safe.png');
+        toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'phone.png' : 'safe.png');
         toggleIconImage.setAttribute('width', '24');
         toggleIconImage.setAttribute('height', '24');
-        toggleIconImage.style.display = DisplayRowsOfType.blocked ? 'none' : '';
         hcell_icon.appendChild(toggleIconImage);
         hcell_icon.onclick = function() {
             // Toggle display of blocked callers.
             DisplayRowsOfType.blocked = !DisplayRowsOfType.blocked;
-            toggleIconImage.style.display = DisplayRowsOfType.blocked ? 'none' : '';
+            toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'phone.png' : 'safe.png');
             UpdateRowDisplay(rowlist);
         }
         hrow.appendChild(hcell_icon);
