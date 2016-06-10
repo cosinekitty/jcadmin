@@ -533,13 +533,11 @@
             row.setAttribute('data-caller-status', CallerStatus(call));
 
             var iconCell = document.createElement('td');
-            if (call.status === 'blocked' || call.status === 'safe') {
-                var iconImg = document.createElement('img');
-                iconImg.setAttribute('src', call.status + '.png');
-                iconImg.setAttribute('width', '24');
-                iconImg.setAttribute('height', '24');
-                iconCell.appendChild(iconImg);
-            }
+            var iconImg = document.createElement('img');
+            iconImg.setAttribute('src', call.status + '.png');
+            iconImg.setAttribute('width', '24');
+            iconImg.setAttribute('height', '24');
+            iconCell.appendChild(iconImg);
             iconCell.className = callStatusClassName;
             row.appendChild(iconCell);
 
