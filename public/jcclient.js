@@ -210,7 +210,7 @@
                 TryToCreateEditNumber(number);
             } else {
                 // Should never get here!!!
-                console.log('How did the edit button get clicked with an invalid number?')
+                console.log('How did the edit button get clicked with an invalid number?');
             }
         }
 
