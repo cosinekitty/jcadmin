@@ -310,29 +310,35 @@ app.get('/api/caller/:phonenumber', (request, response) => {
             FailResponse(response, err);
         } else {
             var recent = ParseRecentCalls(data, 0, 1000000000);
+            var callTimesList = [];
+            var mostRecentCall;
             for (var i=0; i < recent.calls.length; ++i) {
                 var call = recent.calls[i];
                 if (call.number === request.params.phonenumber) {
-                    // Return the most recent instance of the call.
-                    call.count = recent.count[request.params.phonenumber];
-                    response.json({call: call});
-                    return;
+                    if (!mostRecentCall) {
+                        mostRecentCall = call;
+                    }
+                    callTimesList.push(call.when);
                 }
             }
 
-            // Getting here means we have never received a call from this number.
-            // However, we may or may not have an entry for it in the database:
-            // the user might have created a record for it already.
-            var call = {
-                status:   'neutral',
-                when:     '',   // never called
-                number:   request.params.phonenumber,
-                callid:   '',   // never called
-                name:     GetName(request.params.phonenumber),
-                count:    0
-            };
+            if (!mostRecentCall) {
+                // Create the data stucture for an unreceived caller.
+                // This happens when a phone number has been manually entered
+                // and that number has never yet actually called.
+                mostRecentCall = {
+                    status:   'neutral',
+                    when:     '',   // never called
+                    number:   request.params.phonenumber,
+                    callid:   '',   // never called
+                    name:     GetName(request.params.phonenumber)
+                };
+            }
 
-            response.json({call: call});
+            response.json({
+                call: mostRecentCall,
+                history: callTimesList
+            });
         }
     });
 });

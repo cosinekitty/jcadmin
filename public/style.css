@@ -72,3 +72,11 @@ td, th {
 .CallerColumn {
     width: 100%;
 }
+
+.CallCountColumn {
+    text-align: right;
+}
+
+.HistoryColumn {
+    text-align: center;
+}

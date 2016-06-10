@@ -118,11 +118,9 @@
         var numberRow = document.getElementById('TargetNumberRow');
         var callerIdRow = document.getElementById('TargetCallerIdRow');
         var targetNameRow = document.getElementById('TargetNameRow');
-        var countRow = document.getElementById('TargetCountRow');
         numberRow.className =
             callerIdRow.className =
             targetNameRow.className =
-            countRow.className =
             BlockStatusClassName(status);
     }
 
@@ -140,7 +138,75 @@
         return null;
     }
 
-    function SetTargetCall(call) {
+    function CallDateTimeHeader() {
+        var row = document.createElement('tr');
+
+        var callnumCell = document.createElement('th');
+        callnumCell.className = 'CallCountColumn';
+        callnumCell.textContent = '#';
+        row.appendChild(callnumCell);
+
+        var dowCell = document.createElement('th');
+        dowCell.className = 'HistoryColumn';
+        dowCell.textContent = 'DOW';
+        row.appendChild(dowCell);
+
+        var timeCell = document.createElement('th');
+        timeCell.className = 'HistoryColumn';
+        timeCell.textContent = 'Time';
+        row.appendChild(timeCell);
+
+        var dateCell = document.createElement('th');
+        dateCell.className = 'HistoryColumn';
+        dateCell.textContent = 'Date';
+        row.appendChild(dateCell);
+
+        return row;
+    }
+
+    function CallDateTimeRow(callnum, when) {
+        // Create a row with counter, yyyy-mm-dd, day of week, and hh:mm cells.
+        var p = ParseDateTime(when);
+        var row = document.createElement('tr');
+
+        var callnumCell = document.createElement('td');
+        callnumCell.className = 'CallCountColumn';
+        callnumCell.textContent = callnum;
+        row.appendChild(callnumCell);
+
+        var dowCell = document.createElement('td');
+        dowCell.className = 'HistoryColumn';
+        dowCell.textContent = p.dow;
+        row.appendChild(dowCell);
+
+        var timeCell = document.createElement('td');
+        timeCell.className = 'HistoryColumn';
+        timeCell.textContent = ZeroPad(p.hour,2) + ':' + ZeroPad(p.min,2);
+        row.appendChild(timeCell);
+
+        var dateCell = document.createElement('td');
+        dateCell.className = 'HistoryColumn';
+        dateCell.textContent = p.year + '-' + ZeroPad(p.month,2) + '-' + ZeroPad(p.day,2);
+        row.appendChild(dateCell);
+
+        return row;
+    }
+
+    function AppendCallDateTimesTable(hdiv, history) {
+        if (history.length > 0) {
+            var table = document.createElement('table');
+            table.className = 'TargetTable';
+            table.appendChild(CallDateTimeHeader());
+            for (var i=0; i < history.length; ++i) {
+                table.appendChild(CallDateTimeRow(history.length - i, history[i]));
+            }
+            hdiv.appendChild(table);
+        } else {
+            hdiv.textContent = 'No calls have been received from this phone number.';
+        }
+    }
+
+    function SetTargetCall(call, history) {
         var backButton    = document.getElementById('BackToListButton');
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
         var neutralButton = document.getElementById('TargetRadioButtonNeutral');
@@ -149,7 +215,7 @@
         var nameEditBox   = document.getElementById('TargetNameEditBox');
         var callerIdDiv   = document.getElementById('TargetCallerIdDiv');
         var searchButton  = document.getElementById('SearchNumberButton');
-        var countDiv      = document.getElementById('TargetCountDiv');
+        var historyDiv    = document.getElementById('TargetHistoryDiv');
 
         function Classify(status, phonenumber) {
             EnableDisableControls(false);
@@ -165,7 +231,6 @@
         }
 
         numberDiv.textContent = call.number;
-        countDiv.textContent = call.count;
 
         nameEditBox.value = SanitizeSpaces(call.name);
         nameEditBox.onblur = function() {
@@ -190,6 +255,18 @@
         blockButton.onclick   = function() { Classify('blocked', call.number); }
         backButton.onclick    = function() { SetActiveDiv('RecentCallsDiv'); }
         EnableDisableControls(true);
+
+        // Some callers pass in a history of date/times when calls have been received.
+        // Others pass in null to indicate that we need to fetch that info asyncronously.
+        ClearElement(historyDiv);
+        if (history) {
+            AppendCallDateTimesTable(historyDiv, history);
+        } else {
+            ApiGet('/api/caller/' + encodeURIComponent(call.number), function(data){
+                AppendCallDateTimesTable(historyDiv, data.history);
+            });
+        }
+
         SetActiveDiv('TargetCallDiv');
     }
 
@@ -208,7 +285,7 @@
         function TryToCreateEditNumber(number) {
             // Check the server for any existing data for this phone number.
             ApiGet('/api/caller/' + encodeURIComponent(number), function(data) {
-                SetTargetCall(data.call);
+                SetTargetCall(data.call, data.history);
             });
         }
 
@@ -250,7 +327,7 @@
             callerCell.textContent = SanitizeSpaces(call.name) || SanitizeSpaces(call.callid) || SanitizeSpaces(call.number);
             callerCell.className = BlockStatusClassName(CallerStatus(call));
             callerCell.onclick = function() {
-                SetTargetCall(call);
+                SetTargetCall(call, null);
             }
         }
         return callerCell;
@@ -336,6 +413,62 @@
         return format;
     }
 
+    function FormatDateTime(when, now) {
+        // Example: d = '2016-12-31 15:42'
+        var format = when;
+        var p = ParseDateTime(when);
+        if (p) {
+            // Remove the year: '12-13 15:42'.
+            format = when.substring(5);
+
+            if (now) {
+                // Replace 'yyyy-mm-dd' with weekday name if less than 7 calendar days ago: 'Fri 15:42'.
+                // Warning: formatting differently depending on the current date and time is
+                // "impure" in a functional sense, but I believe it creates a better user experience.
+
+                // Calculate the calendar date (year, month, day) of the date/time given in 'now'.
+                // Subtract six *calendar* days from it, not six 24-hour periods!
+                // The subtle part is handling daylight savings time, etc.
+                // This forms a cutoff date/time at midnight before which 'Sun', 'Mon',
+                // etc., become ambiguous.
+                var cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate()-6);
+                if (p.date.getTime() >= cutoff.getTime()) {
+                    format = p.dow + when.substring(10);      // 'Fri 15:42'
+                }
+            }
+        }
+        return format;
+    }
+
+    function ParseDateTime(when) {
+        var m = when.match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})$/);
+        if (m) {
+            var year  = parseInt(m[1], 10);
+            var month = parseInt(m[2], 10);
+            var day   = parseInt(m[3], 10);
+            var hour  = parseInt(m[4], 10);
+            var min   = parseInt(m[5], 10);
+            var date = new Date(year, month-1, day, hour, min);
+            var dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
+            return {
+                date: date,
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                min: min,
+                dow: dow
+            };
+        }
+        return null;
+    }
+
+    function ClearElement(elem) {
+        while (elem.firstChild) {
+            elem.removeChild(elem.firstChild);
+        }
+    }
+
     function PopulateCallHistory() {
         var rowlist = [];
         var recent = PrevPoll.callerid.data.calls;
@@ -419,9 +552,7 @@
 
         // Remove existing children from RecentCallsDiv.
         var rcdiv = document.getElementById('RecentCallsDiv');
-        while (rcdiv.firstChild) {
-            rcdiv.removeChild(rcdiv.firstChild);
-        }
+        ClearElement(rcdiv);
 
         // Fill in newly-generted content for the RecentCallsDiv...
         rcdiv.appendChild(table);

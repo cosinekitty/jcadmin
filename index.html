@@ -8,8 +8,10 @@
     <script src="jcclient.js"></script>
 </head>
 <body>
+    <!-- RecentCallsDiv holds a script-generated table of caller ID history. -->
     <div id="RecentCallsDiv"></div>
 
+    <!-- CreateEditNumberDiv allows manual entry of phone numbers. -->
     <div id="CreateEditNumberDiv">
         <div class="NavSection">
             <span id="CancelCreateEditButton" class="NavButton">&laquo;&nbsp;Back</span>
@@ -27,6 +29,7 @@
         </div>
     </div>
 
+    <!-- TargetCallDiv shows detailed information about a particular caller and allows editing that caller. -->
     <div id="TargetCallDiv">
         <div class="NavSection">
             <span id="BackToListButton" class="NavButton">&laquo;Back</span>
@@ -46,11 +49,6 @@
             <tr id="TargetNameRow">
                 <td>Name:</td>
                 <td><input id="TargetNameEditBox" class="EditBox" type="text" value="" size="20" maxlength="80"></td>
-            </tr>
-
-            <tr id="TargetCountRow">
-                <td>Count:</td>
-                <td><div id="TargetCountDiv"></div></td>
             </tr>
         </table>
 
@@ -76,8 +74,11 @@
                 </div>
             </form>
         </div>
+
+        <div id="TargetHistoryDiv"></div>
     </div>
 
+    <!-- LostContactDiv is displayed while we are unable to communicate with the jcadmin server. -->
     <div id="LostContactDiv">
         <h1>Lost Contact with Server</h1>
         <p>
