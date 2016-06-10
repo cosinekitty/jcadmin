@@ -5,7 +5,7 @@
 */
 
 (function(){
-    function ApiGet(path, onSuccess, onFailure) {
+    function ApiCall(verb, path, onSuccess, onFailure) {
         var handled = false;
         var request = new XMLHttpRequest();
         request.onreadystatechange = function(){
@@ -17,12 +17,12 @@
                         if (!responseJson.error) {
                             onSuccess && onSuccess(responseJson);
                         } else {
-                            console.log('ApiGet returned error object for %s :', path);
+                            console.log('ApiCall(%s) returned error object for %s :', verb, path);
                             console.log(responseJson.error);
                             onFailure && onFailure(request);
                         }
                     } else {
-                        console.log('ApiGet failure for %s :', path);
+                        console.log('ApiCall(%s) failure for %s :', verb, path);
                         console.log(request);
                         onFailure && onFailure(request);
                     }
@@ -30,9 +30,17 @@
             }
         };
 
-        request.open('GET', path);
+        request.open(verb, path);
         request.timeout = 1000;
         request.send(null);
+    }
+
+    function ApiGet(path, onSuccess, onFailure) {
+        ApiCall('GET', path, onSuccess, onFailure);
+    }
+
+    function ApiPost(path, onSuccess, onFailure) {
+        ApiCall('POST', path, onSuccess, onFailure);
     }
 
     // A list of all mutually-exclusive elements (only one is visible at a time):
@@ -101,7 +109,7 @@
 
     function SaveName(call, name) {
         var url = '/api/rename/' + encodeURIComponent(call.number) + '/' + encodeURIComponent(name);
-        ApiGet(url, function(data){
+        ApiPost(url, function(data){
             // Update UI here?
         });
     }
@@ -150,7 +158,7 @@
                 encodeURIComponent(status) + '/' +
                 encodeURIComponent(phonenumber);
 
-            ApiGet(url, function(data) {
+            ApiPost(url, function(data) {
                 SetTargetStatus(data.status);
                 EnableDisableControls(true);
             });

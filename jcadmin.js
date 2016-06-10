@@ -451,7 +451,7 @@ function AddPhoneNumberToFile(filename, phonenumber, response, callback) {
     });
 }
 
-app.get('/api/rename/:phonenumber/:name?', (request, response) => {
+app.post('/api/rename/:phonenumber/:name?', (request, response) => {
     var number = request.params.phonenumber;
     if (!IsPhoneNumber(number)) {
         FailResponse(response, 'Invalid phone number');
@@ -478,7 +478,7 @@ app.get('/api/rename/:phonenumber/:name?', (request, response) => {
     }
 });
 
-app.get('/api/classify/:status/:phonenumber', (request, response) => {
+app.post('/api/classify/:status/:phonenumber', (request, response) => {
     var status = request.params.status;
     var phonenumber = request.params.phonenumber;
     console.log('Classify status=%s, phonenumber=%s', status, phonenumber);
