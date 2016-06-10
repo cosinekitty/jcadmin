@@ -206,6 +206,16 @@
         }
     }
 
+    function SetPhoneNumberSearchLink(div, number) {
+        var link = document.createElement('a');
+        link.setAttribute('href', 'http://www.google.com/search?q=' + encodeURIComponent(number));
+        link.setAttribute('target', '_blank');
+        link.appendChild(document.createTextNode(number));
+
+        ClearElement(div);
+        div.appendChild(link);
+    }
+
     function SetTargetCall(call, history) {
         var backButton    = document.getElementById('BackToListButton');
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
@@ -214,7 +224,6 @@
         var numberDiv     = document.getElementById('TargetNumberDiv');
         var nameEditBox   = document.getElementById('TargetNameEditBox');
         var callerIdDiv   = document.getElementById('TargetCallerIdDiv');
-        var searchButton  = document.getElementById('SearchNumberButton');
         var historyDiv    = document.getElementById('TargetHistoryDiv');
 
         function Classify(status, phonenumber) {
@@ -230,7 +239,7 @@
             });
         }
 
-        numberDiv.textContent = call.number;
+        SetPhoneNumberSearchLink(numberDiv, call.number);
 
         nameEditBox.value = SanitizeSpaces(call.name);
         nameEditBox.onblur = function() {
@@ -238,8 +247,6 @@
         }
 
         callerIdDiv.textContent = call.callid;
-
-        searchButton.innerHTML = '<a href="http://www.google.com/search?q=' + encodeURIComponent(call.number) + '" target="_blank">Search Google</a>';
 
         var status = CallerStatus(call);
         SetTargetStatus(status);
