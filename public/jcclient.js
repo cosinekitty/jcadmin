@@ -4,7 +4,7 @@
     https://github.com/cosinekitty/jcadmin
 */
 
-(function(){
+;(function(){
     function ApiCall(verb, path, onSuccess, onFailure) {
         var handled = false;
         var request = new XMLHttpRequest();
@@ -42,6 +42,8 @@
     function ApiPost(path, onSuccess, onFailure) {
         ApiCall('POST', path, onSuccess, onFailure);
     }
+
+    var RecentCallLimit = 200;
 
     // A list of all mutually-exclusive elements (only one is visible at a time):
     var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv', 'LostContactDiv', 'CreateEditNumberDiv'];
@@ -569,7 +571,7 @@
     }
 
     function RefreshCallHistory() {
-        ApiGet('/api/calls/0/50', function(calldata){
+        ApiGet('/api/calls/0/' + RecentCallLimit, function(calldata){
             PrevPoll.callerid.data = calldata;
             UpdateUserInterface();
         });
