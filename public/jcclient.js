@@ -247,7 +247,8 @@
     function CallerDisplayName(number) {
         return SanitizeSpaces(PrevPoll.callerid.data.names[number]) ||
                SanitizeSpaces(PrevPoll.safe.data.table[number]) ||
-               SanitizeSpaces(PrevPoll.blocked.data.table[number]);
+               SanitizeSpaces(PrevPoll.blocked.data.table[number]) ||
+               SanitizeSpaces(number);
     }
 
     function SetTargetCall(call, history) {
