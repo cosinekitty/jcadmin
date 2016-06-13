@@ -117,19 +117,34 @@
     }
 
     function PushActiveDiv(activeDivId) {
+        if (ActiveDivStack.length > 0) {
+            // Preserve the scroll state of the element we are about to hide.
+            var top = ActiveDivStack[ActiveDivStack.length - 1];
+            var div = document.getElementById(top.divid);
+            top.scroll = window.scrollY;
+        }
         ShowActiveDiv(activeDivId);
-        ActiveDivStack.push(activeDivId);
+        ActiveDivStack.push({
+            divid: activeDivId,
+            scroll: 0       // placeholder for vertical scroll pixels - doesn't matter till we push another div
+        });
     }
 
     function SetActiveDiv(activeDivId) {
-        ShowActiveDiv(activeDivId);
         ActiveDivStack = [];
+        PushActiveDiv(activeDivId);
     }
 
     function PopActiveDiv() {
         ActiveDivStack.pop();
-        var divId = (ActiveDivStack.length > 0) ? ActiveDivStack[ActiveDivStack.length - 1] : 'RecentCallsDiv';
-        ShowActiveDiv(divId);
+        if (ActiveDivStack.length > 0) {
+            var top = ActiveDivStack[ActiveDivStack.length - 1];
+            var div = document.getElementById(top.divid);
+            ShowActiveDiv(top.divid);
+            window.scroll(0, top.scroll);
+        } else {
+            SetActiveDiv('RecentCallsDiv');
+        }
     }
 
     function EnableDisableControls(enabled) {
