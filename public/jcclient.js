@@ -549,14 +549,14 @@
         var hcell_icon = document.createElement('th');
         hcell_icon.className = 'IconColumn';
         var toggleIconImage = document.createElement('img');
-        toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'phone.png' : 'safe.png');
+        toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'all.png' : 'safe.png');
         toggleIconImage.setAttribute('width', '24');
         toggleIconImage.setAttribute('height', '24');
         hcell_icon.appendChild(toggleIconImage);
         hcell_icon.onclick = function() {
             // Toggle display of blocked callers.
             DisplayRowsOfType.blocked = !DisplayRowsOfType.blocked;
-            toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'phone.png' : 'safe.png');
+            toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'all.png' : 'safe.png');
             UpdateRowDisplay(rowlist);
         }
         hrow.appendChild(hcell_icon);
@@ -700,7 +700,24 @@
         return 'neutral';
     }
 
+    var PhoneBookStatusFilter = ['all', 'safe', 'neutral', 'blocked'];
+    var PhoneBookStatusFilterIndex = 0;
+
+    function UpdateFilterIcon(toggleIconImage) {
+        toggleIconImage.setAttribute('src', PhoneBookStatusFilter[PhoneBookStatusFilterIndex] + '.png');
+    }
+
+    function UpdatePhoneBookRowDisplay(rowlist) {
+        var filter = PhoneBookStatusFilter[PhoneBookStatusFilterIndex];
+        for (var i=0; i < rowlist.length; ++i) {
+            var row = rowlist[i];
+            var status = row.getAttribute('data-caller-status');
+            row.style.display = ((filter === 'all' || filter === status) ? '' : 'none');
+        }
+    }
+
     function PopulatePhoneBook() {
+        var rowlist = [];
         var book = SortedPhoneBook();
         var phoneBookDiv = document.getElementById('PhoneBookDiv');
         var table = document.createElement('table');
@@ -711,6 +728,18 @@
         table.appendChild(hrow);
 
         var hStatusCell = document.createElement('th');
+        hStatusCell.className = 'IconColumn';
+        var toggleIconImage = document.createElement('img');
+        UpdateFilterIcon(toggleIconImage);
+        toggleIconImage.setAttribute('width', '24');
+        toggleIconImage.setAttribute('height', '24');
+        hStatusCell.appendChild(toggleIconImage);
+        hStatusCell.onclick = function() {
+            // Cycle through status filters for displaying different subsets of rows.
+            PhoneBookStatusFilterIndex = (1 + PhoneBookStatusFilterIndex) % PhoneBookStatusFilter.length;
+            UpdateFilterIcon(toggleIconImage);
+            UpdatePhoneBookRowDisplay(rowlist);
+        }
         hrow.appendChild(hStatusCell);
 
         var hCountCell = document.createElement('th');
@@ -733,6 +762,7 @@
             var row = document.createElement('tr');
 
             var status = PhoneNumberStatus(entry.number);
+            row.setAttribute('data-caller-status', status);
             var statusCell = IconCellForStatus(status);
             row.appendChild(statusCell);
 
@@ -755,7 +785,10 @@
             row.className = BlockStatusClassName(status);
 
             table.appendChild(row);
+            rowlist.push(row);
         }
+
+        UpdatePhoneBookRowDisplay(rowlist);
     }
 
     function UpdateUserInterface() {
