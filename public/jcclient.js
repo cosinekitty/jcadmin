@@ -47,6 +47,7 @@
 
     // A list of all mutually-exclusive elements (only one is visible at a time):
     var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv', 'LostContactDiv', 'CreateEditNumberDiv'];
+    var ActiveDivStack = [];
     var LostContactCount = 0;
 
     // For toggling display of various types of call history rows.
@@ -100,7 +101,7 @@
         return PrevPoll.callerid.loaded && PrevPoll.safe.loaded && PrevPoll.blocked.loaded;
     }
 
-    function SetActiveDiv(activeDivId) {
+    function ShowActiveDiv(activeDivId) {
         ModalDivList.forEach(function(divId){
             var div = document.getElementById(divId);
             if (divId === activeDivId) {
@@ -109,6 +110,22 @@
                 div.style.display = 'none';
             }
         });
+    }
+
+    function PushActiveDiv(activeDivId) {
+        ShowActiveDiv(activeDivId);
+        ActiveDivStack.push(activeDivId);
+    }
+
+    function SetActiveDiv(activeDivId) {
+        ShowActiveDiv(activeDivId);
+        ActiveDivStack = [];
+    }
+
+    function PopActiveDiv() {
+        ActiveDivStack.pop();
+        var divId = (ActiveDivStack.length > 0) ? ActiveDivStack[ActiveDivStack.length - 1] : 'RecentCallsDiv';
+        ShowActiveDiv(divId);
     }
 
     function EnableDisableControls(enabled) {
@@ -277,7 +294,7 @@
         safeButton.onclick    = function() { Classify('safe',    call.number); }
         neutralButton.onclick = function() { Classify('neutral', call.number); }
         blockButton.onclick   = function() { Classify('blocked', call.number); }
-        backButton.onclick    = function() { SetActiveDiv('RecentCallsDiv'); }
+        backButton.onclick    = function() { PopActiveDiv(); }
         EnableDisableControls(true);
 
         // Some callers pass in a history of date/times when calls have been received.
@@ -291,7 +308,7 @@
             });
         }
 
-        SetActiveDiv('TargetCallDiv');
+        PushActiveDiv('TargetCallDiv');
     }
 
     function TryToCreateEditNumber(number) {
@@ -311,7 +328,7 @@
         editBox.value = '';     // clear out any previously entered phone number
         editBox.focus();
 
-        cancelButton.onclick = function() { SetActiveDiv('RecentCallsDiv'); }
+        cancelButton.onclick = function() { PopActiveDiv(); }
 
         editButton.onclick = function(evt) {
             var number = SanitizePhoneNumber(editBox.value);
@@ -341,7 +358,7 @@
             }
         }
 
-        SetActiveDiv('CreateEditNumberDiv');
+        PushActiveDiv('CreateEditNumberDiv');
     }
 
     function CreateCallerCell(call, status) {
