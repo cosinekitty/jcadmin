@@ -714,6 +714,7 @@
         hrow.appendChild(hStatusCell);
 
         var hCountCell = document.createElement('th');
+        hCountCell.className = 'CallCountColumn';
         hCountCell.textContent = 'Calls';
         hrow.appendChild(hCountCell);
 
@@ -722,6 +723,7 @@
         hrow.appendChild(hNumberCell);
 
         var hNameCell = document.createElement('th');
+        hNameCell.className = 'CallerColumn';
         hNameCell.textContent = 'Name';
         hrow.appendChild(hNameCell);
 
@@ -736,6 +738,7 @@
 
             var countCell = document.createElement('td');
             countCell.textContent = entry.count;
+            countCell.className = 'CallCountColumn';
             row.appendChild(countCell);
 
             var numberCell = document.createElement('td');
