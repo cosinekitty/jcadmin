@@ -43,6 +43,10 @@
         ApiCall('POST', path, onSuccess, onFailure);
     }
 
+    function ApiDelete(path, onSuccess, onFailure) {
+        ApiCall('DELETE', path, onSuccess, onFailure);
+    }
+
     var RecentCallLimit = 200;
 
     // A list of all mutually-exclusive elements (only one is visible at a time):
@@ -220,7 +224,7 @@
         return row;
     }
 
-    function AppendCallDateTimesTable(hdiv, history) {
+    function AppendCallDateTimesTable(hdiv, deleteButton, history) {
         if (history.length > 0) {
             var table = document.createElement('table');
             table.className = 'TargetTable';
@@ -231,6 +235,7 @@
             hdiv.appendChild(table);
         } else {
             hdiv.textContent = 'No calls have been received from this phone number.';
+            deleteButton.style.display = '';   // caller has hidden the delete button, but now we know item can be deleted.
         }
     }
 
@@ -260,6 +265,7 @@
         var nameEditBox   = document.getElementById('TargetNameEditBox');
         var callerIdDiv   = document.getElementById('TargetCallerIdDiv');
         var historyDiv    = document.getElementById('TargetHistoryDiv');
+        var deleteButton  = document.getElementById('DeleteTargetButton');
 
         function Classify(status, phonenumber) {
             EnableDisableControls(false);
@@ -295,18 +301,27 @@
         safeButton.onclick    = function() { Classify('safe',    call.number); }
         neutralButton.onclick = function() { Classify('neutral', call.number); }
         blockButton.onclick   = function() { Classify('blocked', call.number); }
-        backButton.onclick    = function() { PopActiveDiv(); }
+        backButton.onclick    = PopActiveDiv;
         EnableDisableControls(true);
 
         // Some callers pass in a history of date/times when calls have been received.
         // Others pass in null to indicate that we need to fetch that info asyncronously.
         ClearElement(historyDiv);
+        deleteButton.style.display = 'none';    // hide delete button until we know whether the entry can be deleted.
         if (history) {
-            AppendCallDateTimesTable(historyDiv, history);
+            AppendCallDateTimesTable(historyDiv, deleteButton, history);
         } else {
             ApiGet('/api/caller/' + encodeURIComponent(call.number), function(data){
-                AppendCallDateTimesTable(historyDiv, data.history);
+                AppendCallDateTimesTable(historyDiv, deleteButton, data.history);
             });
+        }
+
+        deleteButton.onclick = function() {
+            if (window.confirm("Delete entry?")) {
+                ApiDelete('/api/caller/' + encodeURIComponent(call.number), function(){
+                    PopActiveDiv();
+                });
+            }
         }
 
         PushActiveDiv('TargetCallDiv');
@@ -329,7 +344,7 @@
         editBox.value = '';     // clear out any previously entered phone number
         editBox.focus();
 
-        cancelButton.onclick = function() { PopActiveDiv(); }
+        cancelButton.onclick = PopActiveDiv;
 
         editButton.onclick = function(evt) {
             var number = SanitizePhoneNumber(editBox.value);

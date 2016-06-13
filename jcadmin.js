@@ -292,6 +292,49 @@ app.get('/api/calls/:start/:limit', (request, response) => {
     });
 });
 
+app.delete('/api/caller/:phonenumber', (request, response) => {
+    // Validate that the parameter looks like a valid phone number.
+    if (!IsPhoneNumber(request.params.phonenumber)) {
+        FailResponse(response, 'Not a valid phone number.');
+        return;
+    }
+
+    fs.readFile(jcLogFile, 'utf8', (err, data) => {
+        if (err) {
+            FailResponse(response, err);
+        } else {
+            // Prevent deletion of any phone number that exists in the caller history.
+            var recent = ParseRecentCalls(data, 0, 1000000000);
+            for (var i=0; i < recent.calls.length; ++i) {
+                var call = recent.calls[i];
+                if (call.number === request.params.phonenumber) {
+                    FailResponse(response, 'Cannot delete phone number because it exists in the call history.');
+                    return;
+                }
+            }
+
+            // Deletion is a 3-step process, each of which is performed ascynchronously:
+            // 1. Remove any entry from the safe list.
+            // 2. Remove any entry from the blocked list.
+            // 3. Remove any name entry from the database and save the database to disk.
+
+            SetName(request.params.phonenumber, null);     // delete name entry if any exists
+            RemovePhoneNumberFromFile(whiteListFileName, request.params.phonenumber, response, function(){
+                RemovePhoneNumberFromFile(blackListFileName, request.params.phonenumber, response, function(){
+                    fs.writeFile(database.filename, JSON.stringify(database.data), 'utf8', (err) => {
+                        if (err) {
+                            FailResponse(response, err);
+                        } else {
+                            console.log(`Deleted phone number ${request.params.phonenumber}`);
+                            response.json({deleted: true});
+                        }
+                    });
+                });
+            });
+        }
+    });
+});
+
 app.get('/api/caller/:phonenumber', (request, response) => {
     if (!IsPhoneNumber(request.params.phonenumber)) {
         FailResponse(response, 'Not a valid phone number.');

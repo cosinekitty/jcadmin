@@ -28,17 +28,6 @@
             <span id="TryCreateEditButton" class="NavButton">Create/Edit&nbsp;&raquo;</span>
         </div>
 
-<!--
-        <div class="NavSection">
-            <form action="">
-                <div class="NavSection NavButton">
-                    <input type="checkbox" value="Unreceived" id="PhoneBookCheckboxUnreceived">
-                    <label for="PhoneBookCheckboxUnreceived">Unreceived callers only</label>
-                </div>
-            </form>
-        </div>
--->
-
         <div id="PhoneBookDiv">
         </div>
     </div>
@@ -46,7 +35,7 @@
     <!-- TargetCallDiv shows detailed information about a particular caller and allows editing that caller. -->
     <div id="TargetCallDiv">
         <div class="NavSection">
-            <span id="BackToListButton" class="NavButton">&laquo;Back</span>
+            <span id="BackToListButton" class="NavButton">&laquo;&nbsp;Back</span>
         </div>
 
         <table class="TargetTable" border="0">
@@ -86,6 +75,10 @@
         </div>
 
         <div id="TargetHistoryDiv"></div>
+
+        <div class="NavSection">
+            <span id="DeleteTargetButton" class="NavButton">Delete this entry</span>
+        </div>
     </div>
 
     <!-- LostContactDiv is displayed while we are unable to communicate with the jcadmin server. -->
