@@ -193,7 +193,6 @@ function ParseRecentCalls(text, start, limit) {
     var calls = [];
     var total = 0;
     var count = {};
-    var numbersInPage = {};
     var names = {};     // user name for each phone number, with most recent caller ID as fallback
     for (var line of SplitLines(text).reverse()) {
         var c = ParseCallLine(line);
@@ -206,7 +205,6 @@ function ParseRecentCalls(text, start, limit) {
             }
             if (total >= start && calls.length < limit) {
                 calls.push(c);
-                numbersInPage[c.number] = true;
             }
             ++total;
         }
