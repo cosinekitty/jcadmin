@@ -11,7 +11,7 @@
     <!-- RecentCallsDiv holds a script-generated table of caller ID history. -->
     <div id="RecentCallsDiv"></div>
 
-    <!-- CreateEditNumberDiv allows manual entry of phone numbers. -->
+    <!-- CreateEditNumberDiv allows manual entry of phone numbers. Also displays phone book. -->
     <div id="CreateEditNumberDiv">
         <div class="NavSection">
             <span id="CancelCreateEditButton" class="NavButton">&laquo;&nbsp;Back</span>
@@ -26,6 +26,20 @@
 
         <div class="NavSection">
             <span id="TryCreateEditButton" class="NavButton">Create/Edit&nbsp;&raquo;</span>
+        </div>
+
+<!--
+        <div class="NavSection">
+            <form action="">
+                <div class="NavSection NavButton">
+                    <input type="checkbox" value="Unreceived" id="PhoneBookCheckboxUnreceived">
+                    <label for="PhoneBookCheckboxUnreceived">Unreceived callers only</label>
+                </div>
+            </form>
+        </div>
+-->
+
+        <div id="PhoneBookDiv">
         </div>
     </div>
 

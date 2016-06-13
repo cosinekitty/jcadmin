@@ -194,25 +194,21 @@ function ParseRecentCalls(text, start, limit) {
     var total = 0;
     var count = {};
     var numbersInPage = {};
+    var names = {};     // user name for each phone number, with most recent caller ID as fallback
     for (var line of SplitLines(text).reverse()) {
         var c = ParseCallLine(line);
         if (c) {
             if (IsPhoneNumber(c.number)) {
                 count[c.number] = (count[c.number] || 0) + 1;
+                if (!names[c.number]) {
+                    names[c.number] = GetName(c.number) || c.callid || '';
+                }
             }
             if (total >= start && calls.length < limit) {
-                c.name = GetName(c.number) || c.callid;
                 calls.push(c);
                 numbersInPage[c.number] = true;
             }
             ++total;
-        }
-    }
-
-    var trimmedCount = {};
-    for (var number in count) {
-        if (number in numbersInPage) {
-            trimmedCount[number] = count[number];
         }
     }
 
@@ -221,7 +217,8 @@ function ParseRecentCalls(text, start, limit) {
         start: start,
         limit: limit,
         calls: calls,
-        count: trimmedCount
+        count: count,
+        names: names,
     };
 }
 

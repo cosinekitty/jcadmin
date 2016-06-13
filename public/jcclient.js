@@ -67,16 +67,20 @@
     var PollTimer = null;
     var PrevPoll = {
         callerid:  {
+            loaded: false,      // indicates that this is not real data yet
             modified: '',
             data: {
                 calls: [],
                 limit: 0,
                 start: 0,
                 total: 0,
+                count: {},
+                names: {}
             }
         },
 
         safe: {
+            loaded: false,      // indicates that this is not real data yet
             modified: '',
             data: {
                 table: {}
@@ -84,12 +88,17 @@
         },
 
         blocked: {
+            loaded: false,      // indicates that this is not real data yet
             modified: '',
             data: {
                 table: {}
             }
         },
     };
+
+    function IsAllDataLoaded() {
+        return PrevPoll.callerid.loaded && PrevPoll.safe.loaded && PrevPoll.blocked.loaded;
+    }
 
     function SetActiveDiv(activeDivId) {
         ModalDivList.forEach(function(divId){
@@ -218,6 +227,12 @@
         div.appendChild(link);
     }
 
+    function CallerDisplayName(number) {
+        return SanitizeSpaces(PrevPoll.callerid.data.names[number]) ||
+               SanitizeSpaces(PrevPoll.safe.data.table[number]) ||
+               SanitizeSpaces(PrevPoll.blocked.data.table[number]);
+    }
+
     function SetTargetCall(call, history) {
         var backButton    = document.getElementById('BackToListButton');
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
@@ -243,7 +258,7 @@
 
         SetPhoneNumberSearchLink(numberDiv, call.number);
 
-        nameEditBox.value = SanitizeSpaces(call.name);
+        nameEditBox.value = CallerDisplayName(call.number);
         nameEditBox.onblur = function() {
             SaveName(call, SanitizeSpaces(nameEditBox.value));
         }
@@ -279,6 +294,13 @@
         SetActiveDiv('TargetCallDiv');
     }
 
+    function TryToCreateEditNumber(number) {
+        // Check the server for any existing data for this phone number.
+        ApiGet('/api/caller/' + encodeURIComponent(number), function(data) {
+            SetTargetCall(data.call, data.history);
+        });
+    }
+
     function CreateNewCaller() {
         var cancelButton = document.getElementById('CancelCreateEditButton');
         var editButton = document.getElementById('TryCreateEditButton');
@@ -290,13 +312,6 @@
         editBox.focus();
 
         cancelButton.onclick = function() { SetActiveDiv('RecentCallsDiv'); }
-
-        function TryToCreateEditNumber(number) {
-            // Check the server for any existing data for this phone number.
-            ApiGet('/api/caller/' + encodeURIComponent(number), function(data) {
-                SetTargetCall(data.call, data.history);
-            });
-        }
 
         editButton.onclick = function(evt) {
             var number = SanitizePhoneNumber(editBox.value);
@@ -333,7 +348,7 @@
         var callerCell = document.createElement('td');
         callerCell.setAttribute('colspan', '2');
         if (call.number !== '') {
-            callerCell.textContent = SanitizeSpaces(call.name) || SanitizeSpaces(call.callid) || SanitizeSpaces(call.number);
+            callerCell.textContent = CallerDisplayName(call.number);
             callerCell.className = BlockStatusClassName(CallerStatus(call));
             callerCell.onclick = function() {
                 SetTargetCall(call, null);
@@ -478,6 +493,17 @@
         }
     }
 
+    function IconCellForStatus(status) {
+        var iconCell = document.createElement('td');
+        var iconImg = document.createElement('img');
+        iconImg.setAttribute('src', status + '.png');
+        iconImg.setAttribute('width', '24');
+        iconImg.setAttribute('height', '24');
+        iconCell.appendChild(iconImg);
+        iconCell.className = BlockStatusClassName(status);
+        return iconCell;
+    }
+
     function PopulateCallHistory() {
         var rowlist = [];
         var recent = PrevPoll.callerid.data.calls;
@@ -534,13 +560,7 @@
             var row = document.createElement('tr');
             row.setAttribute('data-caller-status', CallerStatus(call));
 
-            var iconCell = document.createElement('td');
-            var iconImg = document.createElement('img');
-            iconImg.setAttribute('src', call.status + '.png');
-            iconImg.setAttribute('width', '24');
-            iconImg.setAttribute('height', '24');
-            iconCell.appendChild(iconImg);
-            iconCell.className = callStatusClassName;
+            var iconCell = IconCellForStatus(call.status);
             row.appendChild(iconCell);
 
             var whenCell = document.createElement('td');
@@ -566,20 +586,161 @@
         UpdateRowDisplay(rowlist);
     }
 
+    var PhoneNumbersInOrder = PhoneNumbersInOrder_ByName;
+
+    function PhoneNumbersInOrder_ByName(aEntry, bEntry) {
+        var aNameUpper = aEntry.name.toUpperCase();
+        var bNameUpper = bEntry.name.toUpperCase();
+        if (aNameUpper === bNameUpper) {
+            return aEntry.name < bEntry.name;   // break the tie with case-sensitive match
+        }
+        return aNameUpper < bNameUpper;
+    }
+
+    function PhoneBookSortComparer(aEntry, bEntry) {
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+        if (PhoneNumbersInOrder(aEntry, bEntry)) {
+            return -1;
+        }
+
+        if (PhoneNumbersInOrder(bEntry, aEntry)) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    function SortedPhoneBook() {
+        // Calculate the set of all known phone numbers.
+        // Phone numbers are known if they have a user-defined name,
+        // or they appear in either the safe list or the blocked list.
+        var allPhoneNumberSet = {};
+
+        for (var number in PrevPoll.callerid.data.names) {
+            if (IsPhoneNumber(number)) {
+                allPhoneNumberSet[number] = CallerDisplayName(number);
+            }
+        }
+
+        for (var number in PrevPoll.safe.data.table) {
+            if (IsPhoneNumber(number)) {
+                allPhoneNumberSet[number] = CallerDisplayName(number);
+            }
+        }
+
+        for (var number in PrevPoll.blocked.data.table) {
+            if (IsPhoneNumber(number)) {
+                allPhoneNumberSet[number] = CallerDisplayName(number);
+            }
+        }
+
+        // Create an array of {number:number, name:name, count:count} objects to sort.
+        var book = [];
+        for (var number in allPhoneNumberSet) {
+            book.push({
+                number: number,
+                name:   allPhoneNumberSet[number],
+                count:  PrevPoll.callerid.data.count[number] || 0
+            });
+        }
+
+        // Sort the phone book array using the current sort method:
+        book.sort(PhoneBookSortComparer);
+
+        return book;
+    }
+
+    function OnPhoneBookRowClicked() {
+        var number = this.getAttribute('data-phone-number');
+        TryToCreateEditNumber(number);
+    }
+
+    function PhoneNumberStatus(number) {        // gives imperfect results when substring patterns in use
+        if (number in PrevPoll.safe.data.table) {
+            return 'safe';
+        }
+
+        if (number in PrevPoll.blocked.data.table) {
+            return 'blocked';
+        }
+
+        return 'neutral';
+    }
+
+    function PopulatePhoneBook() {
+        var book = SortedPhoneBook();
+        var phoneBookDiv = document.getElementById('PhoneBookDiv');
+        var table = document.createElement('table');
+        ClearElement(phoneBookDiv);
+        phoneBookDiv.appendChild(table);
+
+        var hrow = document.createElement('tr');
+        table.appendChild(hrow);
+
+        var hStatusCell = document.createElement('th');
+        hrow.appendChild(hStatusCell);
+
+        var hCountCell = document.createElement('th');
+        hCountCell.textContent = 'Calls';
+        hrow.appendChild(hCountCell);
+
+        var hNumberCell = document.createElement('th');
+        hNumberCell.textContent = 'Number';
+        hrow.appendChild(hNumberCell);
+
+        var hNameCell = document.createElement('th');
+        hNameCell.textContent = 'Name';
+        hrow.appendChild(hNameCell);
+
+        for (var i=0; i < book.length; ++i) {
+            var entry = book[i];
+
+            var row = document.createElement('tr');
+
+            var status = PhoneNumberStatus(entry.number);
+            var statusCell = IconCellForStatus(status);
+            row.appendChild(statusCell);
+
+            var countCell = document.createElement('td');
+            countCell.textContent = entry.count;
+            row.appendChild(countCell);
+
+            var numberCell = document.createElement('td');
+            numberCell.textContent = entry.number;
+            row.appendChild(numberCell);
+
+            var nameCell = document.createElement('td');
+            nameCell.textContent = entry.name;
+            row.appendChild(nameCell);
+
+            row.setAttribute('data-phone-number', entry.number);
+            row.onclick = OnPhoneBookRowClicked;
+
+            row.className = BlockStatusClassName(status);
+
+            table.appendChild(row);
+        }
+    }
+
     function UpdateUserInterface() {
-        PopulateCallHistory();
+        if (IsAllDataLoaded()) {
+            PopulateCallHistory();
+            PopulatePhoneBook();
+        }
     }
 
     function RefreshCallHistory() {
         ApiGet('/api/calls/0/' + RecentCallLimit, function(calldata){
             PrevPoll.callerid.data = calldata;
+            PrevPoll.callerid.loaded = true;
             UpdateUserInterface();
         });
     }
 
-    function RefreshPhoneList(filetype) {
-        ApiGet('/api/fetch/' + filetype, function(data) {
-            PrevPoll[filetype].data = data;
+    function RefreshPhoneList(status) {
+        ApiGet('/api/fetch/' + status, function(data) {
+            PrevPoll[status].data = data;
+            PrevPoll[status].loaded = true;
             UpdateUserInterface();
         });
     }
