@@ -635,6 +635,16 @@
     }
 
     var PhoneNumbersInOrder = PhoneNumbersInOrder_ByName;
+    var PhoneBookSortDirection = +1;    // 1=ascending, -1=descending
+
+    function SortableColumnText(label, sortfunc) {
+        if (sortfunc === PhoneNumbersInOrder) {
+            // Put an arrow on this column to indicate that we are sorting by it.
+            var arrow = (PhoneBookSortDirection > 0) ? '&dArr;' : '&uArr;';
+            return label + '&nbsp;' + arrow;
+        }
+        return label;
+    }
 
     function PhoneNumbersInOrder_ByName(aEntry, bEntry) {
         var aNameUpper = aEntry.name.toUpperCase();
@@ -645,14 +655,22 @@
         return aNameUpper < bNameUpper;
     }
 
+    function PhoneNumbersInOrder_ByNumber(aEntry, bEntry) {
+        return aEntry.number < bEntry.number;
+    }
+
+    function PhoneNumbersInOrder_ByCallCount(aEntry, bEntry) {
+        return aEntry.count < bEntry.count;
+    }
+
     function PhoneBookSortComparer(aEntry, bEntry) {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
         if (PhoneNumbersInOrder(aEntry, bEntry)) {
-            return -1;
+            return -PhoneBookSortDirection;
         }
 
         if (PhoneNumbersInOrder(bEntry, aEntry)) {
-            return 1;
+            return +PhoneBookSortDirection;
         }
 
         return 0;
@@ -731,6 +749,19 @@
         }
     }
 
+    function SetPhoneBookSort(sortfunc) {
+        if (PhoneNumbersInOrder === sortfunc) {
+            // Toggle the direction of sorting on the same column.
+            PhoneBookSortDirection *= -1;
+        } else {
+            // Switch to ascending sort on a different column.
+            PhoneBookSortDirection = +1;
+            PhoneNumbersInOrder = sortfunc;
+        }
+        // Re-render the phone book table in the new sort order.
+        PopulatePhoneBook();
+    }
+
     function PopulatePhoneBook() {
         var rowlist = [];
         var book = SortedPhoneBook();
@@ -759,16 +790,25 @@
 
         var hCountCell = document.createElement('th');
         hCountCell.className = 'CallCountColumn';
-        hCountCell.textContent = 'Calls';
+        hCountCell.innerHTML = SortableColumnText('Calls', PhoneNumbersInOrder_ByCallCount);
+        hCountCell.onclick = function() {
+            SetPhoneBookSort(PhoneNumbersInOrder_ByCallCount);
+        }
         hrow.appendChild(hCountCell);
 
         var hNumberCell = document.createElement('th');
-        hNumberCell.textContent = 'Number';
+        hNumberCell.innerHTML = SortableColumnText('Number', PhoneNumbersInOrder_ByNumber);
+        hNumberCell.onclick = function() {
+            SetPhoneBookSort(PhoneNumbersInOrder_ByNumber);
+        }
         hrow.appendChild(hNumberCell);
 
         var hNameCell = document.createElement('th');
         hNameCell.className = 'CallerColumn';
-        hNameCell.textContent = 'Name';
+        hNameCell.innerHTML = SortableColumnText('Name', PhoneNumbersInOrder_ByName);
+        hNameCell.onclick = function() {
+            SetPhoneBookSort(PhoneNumbersInOrder_ByName);
+        }
         hrow.appendChild(hNameCell);
 
         for (var i=0; i < book.length; ++i) {
