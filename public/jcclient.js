@@ -920,7 +920,6 @@
         function(request) {
             // On failure, go into Lost Contact mode but keep polling for reconnect.
             ++LostContactCount;
-            document.getElementById('RetryCountSpan').textContent = LostContactCount;
             if (LostContactCount == 1) {
                 SetActiveDiv('LostContactDiv');
             }
