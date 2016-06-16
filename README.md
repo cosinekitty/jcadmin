@@ -25,7 +25,7 @@ node jcadmin.js 9393 /home/don/phone/jcblock >> jcadmin.log
 
 - You can manually run the script by entering `./run`. Now test this by launching a browser and using the address `http://localhost:9393`.  Substitute whatever port number you put in the `run` script.
 
-- If everything is working, you will now probably want to make your system start the jcadmin and jcblock programs automatically every time it boots up.  I do this using `cron`.  Here is the entry I added to the bottom of my `/etc/crontab` file:
+- If everything is working, you will now probably want to make your system start the jcadmin and jcblock programs automatically every time it boots up.  I do this using `cron`.  Here is the entry I added to the bottom of my `/etc/crontab` file.  (I have a similar `cron` entry to run `jcblock`.)
 ````
 @reboot don /home/don/jcadmin/run
 ````
