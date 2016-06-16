@@ -194,6 +194,7 @@ function ParseRecentCalls(text, start, limit) {
     var total = 0;
     var count = {};
     var names = {};     // user name for each phone number, with most recent caller ID as fallback
+    var callid = {};    // most recent call ID associated with each phone number
     for (var line of SplitLines(text).reverse()) {
         var c = ParseCallLine(line);
         if (c) {
@@ -201,6 +202,9 @@ function ParseRecentCalls(text, start, limit) {
                 count[c.number] = (count[c.number] || 0) + 1;
                 if (!names[c.number]) {
                     names[c.number] = GetName(c.number) || c.callid || '';
+                }
+                if (c.callid && !callid[c.number]) {
+                    callid[c.number] = c.callid || '';
                 }
             }
             if (total >= start && calls.length < limit) {
@@ -217,6 +221,7 @@ function ParseRecentCalls(text, start, limit) {
         calls: calls,
         count: count,
         names: names,
+        callid: callid,
     };
 }
 

@@ -161,14 +161,9 @@
         });
     }
 
-    function SetTargetStatus(status) {
-        var numberRow = document.getElementById('TargetNumberRow');
-        var callerIdRow = document.getElementById('TargetCallerIdRow');
-        var targetNameRow = document.getElementById('TargetNameRow');
-        numberRow.className =
-            callerIdRow.className =
-            targetNameRow.className =
-            BlockStatusClassName(status);
+    function SetTargetStatus(numberStatus, callidStatus) {
+        document.getElementById('TargetNumberRow').className = BlockStatusClassName(numberStatus);
+        document.getElementById('TargetCallerIdRow').className = BlockStatusClassName(callidStatus);
     }
 
     function IsPhoneNumber(pattern) {
@@ -271,6 +266,10 @@
                SanitizeSpaces(number);
     }
 
+    function CallerId(number) {
+        return SanitizeSpaces(PrevPoll.callerid.data.callid[number]);
+    }
+
     function SetTargetCall(call, history) {
         var backButton    = document.getElementById('BackToListButton');
         var safeButton    = document.getElementById('TargetRadioButtonSafe');
@@ -290,7 +289,8 @@
                 encodeURIComponent(phonenumber);
 
             ApiPost(url, function(data) {
-                SetTargetStatus(data.status);
+                var detail = FilterStatus(data.status, FieldStatus(call.callid));
+                SetTargetStatus(detail.numberStatus, detail.callidStatus);
                 EnableDisableControls(true);
             });
         }
@@ -304,10 +304,10 @@
 
         callerIdDiv.textContent = call.callid;
 
-        var status = CallerStatus(call);
-        SetTargetStatus(status);
+        var detail = DetailedStatus(call);
+        SetTargetStatus(detail.numberStatus, detail.callidStatus);
 
-        switch (status) {
+        switch (detail.numberStatus) {
             case 'blocked': blockButton.checked = true;     break;
             case 'safe':    safeButton.checked = true;      break;
             default:        neutralButton.checked = true;   break;
@@ -332,7 +332,7 @@
         }
 
         deleteButton.onclick = function() {
-            if (window.confirm("Delete entry?")) {
+            if (window.confirm('Delete entry?')) {
                 ApiDelete('/api/caller/' + encodeURIComponent(call.number), function(){
                     PopActiveDiv();
                 });
@@ -417,30 +417,62 @@
         return s;
     }
 
-    function PhoneListMatch(list, call) {
+    function PhoneListMatchText(list, text) {
         for (var key in list) {
-            if (key.length > 0 && (call.number.indexOf(key) >= 0 || call.callid.indexOf(key) >= 0)) {
+            if (key.length > 0 && (text.indexOf(key) >= 0)) {
                 return true;
             }
         }
         return false;
     }
 
-    function CallerStatus(call) {
-        // Emulate jcblock's rules for whitelisting and blacklisting.
-        // First look in the whitelist for any pattern match with name or number.
-        // If found, it is whitelisted.
-        // Otherwise look in blacklist, and if found, it is blacklisted.
-        // Otherwise it is neutral.
-        if (PhoneListMatch(PrevPoll.safe.data.table, call)) {
-            return 'safe';
-        }
+    function FieldStatus(text) {
+        if (text) {     // optimization: avoid linear searches that can't find anything
+            if (PhoneListMatchText(PrevPoll.safe.data.table, text)) {
+                return 'safe';
+            }
 
-        if (PhoneListMatch(PrevPoll.blocked.data.table, call)) {
-            return 'blocked';
+            if (PhoneListMatchText(PrevPoll.blocked.data.table, text)) {
+                return 'blocked';
+            }
         }
 
         return 'neutral';
+    }
+
+    function FilterStatus(numberStatus, callidStatus) {
+        if (numberStatus==='safe' && callidStatus==='blocked') {
+            // avoid confusion: the caller is not blocked, so don't display caller ID as blocked
+            callidStatus = 'neutral';
+        } else if (callidStatus==='safe' && numberStatus==='blocked') {
+            numberStatus = 'neutral';
+        }
+
+        var status;
+        if (numberStatus==='safe' || callidStatus==='safe') {
+            status = 'safe';
+        } else if (numberStatus==='blocked' || callidStatus==='blocked') {
+            status = 'blocked';
+        } else {
+            status = 'neutral';
+        }
+
+        return {
+            numberStatus: numberStatus,
+            callidStatus: callidStatus,
+            status: status,
+        };
+    }
+
+    function DetailedStatus(call) {
+        // Analyze a call and compute detailed status information
+        // for phone number and caller ID independently, using the
+        // same rules as jcblock.
+        return FilterStatus(FieldStatus(call.number), FieldStatus(call.callid));
+    }
+
+    function CallerStatus(call) {
+        return DetailedStatus(call).status;
     }
 
     function SanitizeSpaces(text) {
@@ -704,9 +736,10 @@
         var book = [];
         for (var number in allPhoneNumberSet) {
             book.push({
-                number: number,
-                name:   allPhoneNumberSet[number],
-                count:  PrevPoll.callerid.data.count[number] || 0
+                number:  number,
+                name:    allPhoneNumberSet[number],
+                callid:  CallerId(number),
+                count:   PrevPoll.callerid.data.count[number] || 0
             });
         }
 
@@ -719,18 +752,6 @@
     function OnPhoneBookRowClicked() {
         var number = this.getAttribute('data-phone-number');
         TryToCreateEditNumber(number);
-    }
-
-    function PhoneNumberStatus(number) {        // gives imperfect results when substring patterns in use
-        if (number in PrevPoll.safe.data.table) {
-            return 'safe';
-        }
-
-        if (number in PrevPoll.blocked.data.table) {
-            return 'blocked';
-        }
-
-        return 'neutral';
     }
 
     var PhoneBookStatusFilter = ['all', 'safe', 'neutral', 'blocked'];
@@ -816,9 +837,9 @@
 
             var row = document.createElement('tr');
 
-            var status = PhoneNumberStatus(entry.number);
-            row.setAttribute('data-caller-status', status);
-            var statusCell = IconCellForStatus(status);
+            var detail = DetailedStatus(entry);
+            row.setAttribute('data-caller-status', detail.status);
+            var statusCell = IconCellForStatus(detail.status);
             row.appendChild(statusCell);
 
             var countCell = document.createElement('td');
@@ -828,16 +849,16 @@
 
             var numberCell = document.createElement('td');
             numberCell.textContent = entry.number;
+            numberCell.className = BlockStatusClassName(detail.numberStatus);
             row.appendChild(numberCell);
 
             var nameCell = document.createElement('td');
             nameCell.textContent = entry.name;
+            nameCell.className = BlockStatusClassName(detail.callidStatus);
             row.appendChild(nameCell);
 
             row.setAttribute('data-phone-number', entry.number);
             row.onclick = OnPhoneBookRowClicked;
-
-            row.className = BlockStatusClassName(status);
 
             table.appendChild(row);
             rowlist.push(row);
