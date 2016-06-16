@@ -15,6 +15,7 @@
     <div id="CreateEditNumberDiv">
         <div class="NavSection">
             <span id="CancelCreateEditButton" class="NavButton">&laquo;&nbsp;Back</span>
+            <span id="SettingsButton" class="NavButton RightButton">Settings&nbsp;&raquo;</span>
         </div>
 
         <table class="TargetTable" border="0">
@@ -79,6 +80,45 @@
         <div class="NavSection">
             <span id="DeleteTargetButton" class="NavButton">Delete this entry</span>
         </div>
+    </div>
+
+    <!-- SettingsDiv allows user to configure client-side settings. -->
+    <div id="SettingsDiv">
+        <div class="NavSection">
+            <div class="NavSection">
+                <span id="SettingsBackButton" class="NavButton">&laquo;&nbsp;Back</span>
+            </div>
+        </div>
+
+        <hr>
+
+        <div>
+            <div class="SettingsTitle">Call History Limit</div>
+
+            <form action="">
+                <div class="SettingsButton">
+                    <input type="radio" name="HistoryLimit" value="30" id="HistoryLimitButton1">
+                    <label for="HistoryLimit">30</label>
+                </div>
+
+                <div class="SettingsButton">
+                    <input type="radio" name="HistoryLimit" value="100" id="HistoryLimitButton2">
+                    <label for="HistoryLimit">100</label>
+                </div>
+
+                <div class="SettingsButton">
+                    <input type="radio" name="HistoryLimit" value="500" id="HistoryLimitButton3">
+                    <label for="HistoryLimit">500</label>
+                </div>
+
+                <div class="SettingsButton">
+                    <input type="radio" name="HistoryLimit" value="1000000000" id="HistoryLimitButton4">
+                    <label for="HistoryLimit">All</label>
+                </div>
+            </form>
+        </div>
+
+        <hr>
     </div>
 
     <!-- LostContactDiv is displayed while we are unable to communicate with the jcadmin server. -->

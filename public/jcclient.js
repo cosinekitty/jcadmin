@@ -47,12 +47,19 @@
         ApiCall('DELETE', path, onSuccess, onFailure);
     }
 
-    var RecentCallLimit = 200;
-
     // A list of all mutually-exclusive elements (only one is visible at a time):
-    var ModalDivList = ['RecentCallsDiv', 'TargetCallDiv', 'LostContactDiv', 'CreateEditNumberDiv'];
+    var ModalDivList = [
+        'RecentCallsDiv',
+        'TargetCallDiv',
+        'LostContactDiv',
+        'CreateEditNumberDiv',
+        'SettingsDiv'
+    ];
+
     var ActiveDivStack = [];
     var LostContactCount = 0;
+    var MyLocalStorage = CheckStorage('localStorage');
+    var ClientSettings = LoadClientSettings();
 
     // For toggling display of various types of call history rows.
     var DisplayRowsOfType = {
@@ -351,6 +358,7 @@
 
     function CreateNewCaller() {
         var cancelButton = document.getElementById('CancelCreateEditButton');
+        var settinsButton = document.getElementById('SettingsButton');
         var editButton = document.getElementById('TryCreateEditButton');
         var editBox = document.getElementById('NumberEditBox');
 
@@ -360,6 +368,8 @@
         editBox.focus();
 
         cancelButton.onclick = PopActiveDiv;
+
+        SettingsButton.onclick = EnterSettingsPage;
 
         editButton.onclick = function(evt) {
             var number = SanitizePhoneNumber(editBox.value);
@@ -867,6 +877,47 @@
         UpdatePhoneBookRowDisplay(rowlist);
     }
 
+    function EnterSettingsPage() {
+        var oldLimit = ClientSettings.RecentCallLimit;
+        var backButton = document.getElementById('SettingsBackButton');
+        backButton.onclick = PopActiveDiv;
+
+        // Search the HistoryLimit radio buttons for matching value to select.
+        // If we can't find a matching value, select smallest value and set to it.
+        // Either way we end up with the UI matching the actual limit value.
+        var historyLimitButtons = document.getElementsByName('HistoryLimit');
+        var found = false;
+        for (var i=0; i < historyLimitButtons.length; ++i) {
+            var button = historyLimitButtons[i];
+            var limit = parseInt(button.value);
+            if (limit === ClientSettings.RecentCallLimit) {
+                button.checked = true;
+                found = true;
+            }
+            button.onclick = function() {
+                var limit = parseInt(this.value);
+                if (limit !== ClientSettings.RecentCallLimit) {
+                    ClientSettings.RecentCallLimit = limit;
+                    SaveClientSettings(ClientSettings);
+                    RefreshCallHistory();
+                }
+            }
+        }
+
+        if (!found) {
+            var button = historyLimitButtons[0];
+            ClientSettings.RecentCallLimit = parseInt(button.value);
+            button.checked = true;
+        }
+
+        if (oldLimit !== ClientSettings.RecentCallLimit) {
+            SaveClientSettings(ClientSettings);
+            RefreshCallHistory();
+        }
+
+        PushActiveDiv('SettingsDiv');
+    }
+
     function UpdateUserInterface() {
         if (IsAllDataLoaded()) {
             PopulateCallHistory();
@@ -875,7 +926,7 @@
     }
 
     function RefreshCallHistory() {
-        ApiGet('/api/calls/0/' + RecentCallLimit, function(calldata){
+        ApiGet('/api/calls/0/' + ClientSettings.RecentCallLimit, function(calldata){
             PrevPoll.callerid.data = calldata;
             PrevPoll.callerid.loaded = true;
             UpdateUserInterface();
@@ -925,6 +976,45 @@
             }
             PollTimer = window.setTimeout(PollCallerId, 2000);
         });
+    }
+
+    function CheckStorage(type) {
+    	try {
+    		var storage = window[type],
+    			x = '__storage_test__';
+    		storage.setItem(x, x);
+    		storage.removeItem(x);
+    		return storage;
+    	} catch(e) {
+    		return null;
+    	}
+    }
+
+    function LoadClientSettings() {
+        var settings = null;
+        try {
+            if (MyLocalStorage && MyLocalStorage.JunkCallClient) {
+                settings = JSON.parse(MyLocalStorage.JunkCallClient);
+            }
+        } catch (e) {
+            // If there is a problem loading, just reset the local settings.
+            console.log('LoadClientSettings EXCEPTION: ', e);
+        }
+
+        if (!settings) {
+            // Getting here indicates first-time initialization *or* emergency reset.
+            settings = {
+                RecentCallLimit: 30
+            };
+        }
+
+        return settings;
+    }
+
+    function SaveClientSettings(settings) {
+        if (MyLocalStorage) {
+            MyLocalStorage.JunkCallClient = JSON.stringify(settings);
+        }
     }
 
     window.onload = function() {

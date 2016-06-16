@@ -33,6 +33,25 @@ td, th {
     color: blue;
 }
 
+.RightButton {
+    float: right;
+}
+
+.SettingsTitle {
+    font-size: large;
+    font-family: sans-serif;
+    color: green;
+}
+
+.SettingsButton {
+    font-size: large;
+    font-family: sans-serif;
+    color: green;
+    border-style: solid;
+    border-width: 8px;
+    border-color: transparent;
+}
+
 .NavSection {
     border-style: solid;
     border-width: 10px;
