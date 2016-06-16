@@ -6,6 +6,14 @@ It provides a browser-based interface that machines on your home network can use
 
 Jcadmin makes maintaining jcblock much easier, eliminating the need to manually edit files.  It also provides an easy way to see how often and when calls have been received from a given phone number.
 
+## Screen shots
+
+![Call history](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-home.png "Call history")
+
+![Caller details](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-detail.png "Detail page")
+
+![Phone book](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-phonebook.png "Phone book")
+
 ## Installation
 
 The author has tested jcadmin on his Debian Jessie machine, but it should work fine on any Linux machine for which Node.js is available, including Raspberry Pi.
@@ -29,10 +37,3 @@ node jcadmin.js 9292 /home/don/phone/jcblock >> jcadmin.log
 ````
 @reboot don /home/don/jcadmin/run
 ````
-## Screen shots
-
-![Call history](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-home.png "Call history")
-
-![Caller details](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-detail.png "Detail page")
-
-![Phone book](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-phonebook.png "Phone book")
