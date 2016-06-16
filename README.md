@@ -18,14 +18,21 @@ The author has tested jcadmin on his Debian Jessie machine, but it should work f
 ````
 #!/bin/bash
 cd /home/don/jcadmin
-node jcadmin.js 9393 /home/don/phone/jcblock >> jcadmin.log
+node jcadmin.js 9292 /home/don/phone/jcblock >> jcadmin.log
 ````
 - Be sure to change settings to make this script executable: 
 `chmod +x run`.
 
-- You can manually run the script by entering `./run`. Now test this by launching a browser and using the address `http://localhost:9393`.  Substitute whatever port number you put in the `run` script.
+- You can manually run the script by entering `./run`. Now test this by launching a browser and using the address `http://localhost:9292`.  Substitute whatever port number you put in the `run` script.
 
 - If everything is working, you will now probably want to make your system start the jcadmin and jcblock programs automatically every time it boots up.  I do this using `cron`.  Here is the entry I added to the bottom of my `/etc/crontab` file.  (I have a similar `cron` entry to run `jcblock`.)
 ````
 @reboot don /home/don/jcadmin/run
 ````
+## Screen shots
+
+![Call history](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-home.png "Call history")
+
+![Caller details](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-detail.png "Detail page")
+
+![Phone book](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-phonebook.png "Phone book")
