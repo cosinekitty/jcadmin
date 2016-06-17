@@ -8,9 +8,15 @@ Jcadmin makes maintaining jcblock much easier, eliminating the need to manually 
 
 ## Screen shots
 
+- Home screen displays a list of recent calls.
+
 ![Call history](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-home.png "Call history")
 
+- Click on any call to see detailed info about that caller.
+
 ![Caller details](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-detail.png "Detail page")
+
+- Sortable phone book shows known callers.
 
 ![Phone book](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-phonebook.png "Phone book")
 
