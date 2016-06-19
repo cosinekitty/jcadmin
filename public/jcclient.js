@@ -5,6 +5,8 @@
 */
 
 ;(function(){
+    'use strict';
+    
     function ApiCall(verb, path, onSuccess, onFailure) {
         var handled = false;
         var request = new XMLHttpRequest();

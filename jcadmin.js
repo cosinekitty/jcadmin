@@ -3,6 +3,9 @@
 
     https://github.com/cosinekitty/jcadmin
 */
+
+'use strict';
+
 var path = require('path');
 var fs = require('fs');
 var express = require('express');
@@ -400,9 +403,8 @@ app.get('/api/fetch/:filetype', (request, response) => {
         if (err) {
             FailResponse(response, err);
         } else {
-            reply = {table: {}};
-            var lines = SplitLines(data);
-            for (var line of lines) {
+            var reply = {table: {}};
+            for (var line of SplitLines(data)) {
                 var record = ParseRecord(line);
                 if (record) {
                     reply.table[record.pattern] = record.comment;
