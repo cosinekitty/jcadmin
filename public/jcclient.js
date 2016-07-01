@@ -981,15 +981,14 @@
     }
 
     function CheckStorage(type) {
-    	try {
-    		var storage = window[type],
-    			x = '__storage_test__';
-    		storage.setItem(x, x);
-    		storage.removeItem(x);
-    		return storage;
-    	} catch(e) {
-    		return null;
-    	}
+        try {
+            var storage = window[type], x = '__storage_test__';
+            storage.setItem(x, x);
+            storage.removeItem(x);
+            return storage;
+        } catch(e) {
+            return null;
+        }
     }
 
     function LoadClientSettings() {
