@@ -973,7 +973,7 @@
         function(request) {
             // On failure, go into Lost Contact mode but keep polling for reconnect.
             ++LostContactCount;
-            if (LostContactCount == 1) {
+            if (LostContactCount === 1) {
                 SetActiveDiv('LostContactDiv');
             }
             PollTimer = window.setTimeout(PollCallerId, 2000);
