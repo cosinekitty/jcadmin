@@ -33,7 +33,7 @@
         };
 
         request.open(verb, path);
-        request.timeout = 1000;
+        request.timeout = 2000;
         request.send(null);
     }
 
