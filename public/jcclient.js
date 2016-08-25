@@ -6,7 +6,7 @@
 
 ;(function(){
     'use strict';
-    
+
     function ApiCall(verb, path, onSuccess, onFailure) {
         var handled = false;
         var request = new XMLHttpRequest();
@@ -495,43 +495,6 @@
     function FormatDateTime(when, now) {
         // Example: d = '2016-12-31 15:42'
         var format = when;
-        var m = when.match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})$/);
-        if (m) {
-            // Remove the year: '12-13 15:42'.
-            format = when.substring(5);
-
-            if (now) {
-                // Replace 'yyyy-mm-dd' with weekday name if less than 7 calendar days ago: 'Fri 15:42'.
-                // Warning: formatting differently depending on the current date and time is
-                // "impure" in a functional sense, but I believe it creates a better user experience.
-                // The downside is that the display can become stale if there are no phone calls for a long time.
-                // Client may wish to refesh the display every hour or two to compensate.
-
-                var year  = parseInt(m[1], 10);
-                var month = parseInt(m[2], 10);
-                var day   = parseInt(m[3], 10);
-                var hour  = parseInt(m[4], 10);
-                var min   = parseInt(m[5], 10);
-
-                // Calculate the calendar date (year, month, day) of the date/time given in 'now'.
-                // Subtract six *calendar* days from it, not six 24-hour periods!
-                // The subtle part is handling daylight savings time, etc.
-                // This forms a cutoff date/time at midnight before which 'Sun', 'Mon',
-                // etc., become ambiguous.
-                var cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate()-6);
-                var date = new Date(year, month-1, day, hour, min);
-                if (date.getTime() >= cutoff.getTime()) {
-                    var dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
-                    format = dow + when.substring(10);      // 'Fri 15:42'
-                }
-            }
-        }
-        return format;
-    }
-
-    function FormatDateTime(when, now) {
-        // Example: d = '2016-12-31 15:42'
-        var format = when;
         var p = ParseDateTime(when);
         if (p) {
             // Remove the year: '12-13 15:42'.
@@ -644,12 +607,17 @@
         var now = new Date();
 
         var tbody = document.createElement('tbody');
+        var prevdate = null;
         for (var i=0; i < recent.length; ++i) {
             var call = recent[i];
+            var calldate = call.when && call.when.substr(0, 10);
             call.count = PrevPoll.callerid.data.count[call.number] || '?';
             var callStatusClassName = BlockStatusClassName(call.status);
 
             var row = document.createElement('tr');
+            if (prevdate && calldate && (prevdate !== calldate)) {
+                row.setAttribute('class', 'NewDateRow');
+            }
             row.setAttribute('data-caller-status', CallerStatus(call));
 
             var iconCell = IconCellForStatus(call.status);
@@ -664,6 +632,7 @@
 
             tbody.appendChild(row);
             rowlist.push(row);
+            prevdate = calldate;
         }
 
         table.appendChild(thead);
