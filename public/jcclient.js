@@ -70,6 +70,25 @@
         safe: true
     };
 
+    var HistoryDisplayModeIndex = 0;
+    var HistoryDisplayModeRing = ['all', 'safe', 'blocked', 'neutral'];
+
+    function HistoryDisplayModeIcon() {
+        // Choose which icon to display in the upper left corner
+        // of the history page, depending on which mode the user
+        // has selected by clicking on that icon.
+        return HistoryDisplayModeRing[HistoryDisplayModeIndex] + '.png';
+    }
+
+    function CycleHistoryDisplayMode() {
+        // Choose the next mode in the ring of modes: all, safe only, blocked only.
+        HistoryDisplayModeIndex = (1 + HistoryDisplayModeIndex) % HistoryDisplayModeRing.length;
+        var mode = HistoryDisplayModeRing[HistoryDisplayModeIndex];
+        DisplayRowsOfType.neutral = (mode==='all' || mode==='neutral');
+        DisplayRowsOfType.blocked = (mode==='all' || mode==='blocked');
+        DisplayRowsOfType.safe    = (mode==='all' || mode==='safe');
+    }
+
     function UpdateRowDisplay(callHistoryRows) {   // call to reflect current DisplayRowsOfType settings
         for (var i=0; i < callHistoryRows.length; ++i) {
             var row = callHistoryRows[i];
@@ -571,14 +590,14 @@
         var hcell_icon = document.createElement('th');
         hcell_icon.className = 'IconColumn';
         var toggleIconImage = document.createElement('img');
-        toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'all.png' : 'safe.png');
+        toggleIconImage.setAttribute('src', HistoryDisplayModeIcon());
         toggleIconImage.setAttribute('width', '24');
         toggleIconImage.setAttribute('height', '24');
         hcell_icon.appendChild(toggleIconImage);
         hcell_icon.onclick = function() {
-            // Toggle display of blocked callers.
-            DisplayRowsOfType.blocked = !DisplayRowsOfType.blocked;
-            toggleIconImage.setAttribute('src', DisplayRowsOfType.blocked ? 'all.png' : 'safe.png');
+            // Cycle through the next display mode.
+            CycleHistoryDisplayMode();
+            toggleIconImage.setAttribute('src', HistoryDisplayModeIcon());
             UpdateRowDisplay(rowlist);
         }
         hrow.appendChild(hcell_icon);
