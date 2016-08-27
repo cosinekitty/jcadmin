@@ -6,6 +6,10 @@ It provides a browser-based interface that machines on your home network can use
 
 Jcadmin makes maintaining jcblock much easier, eliminating the need to manually edit files.  It also provides an easy way to see how often and when calls have been received from a given phone number.
 
+## Installation
+
+See the [Installation](https://github.com/cosinekitty/jcadmin/wiki/Installation) wiki page.
+
 ## Screen shots
 
 - Home screen displays a list of recent calls.
@@ -20,6 +24,3 @@ Jcadmin makes maintaining jcblock much easier, eliminating the need to manually 
 
 ![Phone book](https://raw.githubusercontent.com/cosinekitty/jcadmin/master/screenshots/jcadmin-phonebook.png "Phone book")
 
-## Installation
-
-See the [Installation](https://github.com/cosinekitty/jcadmin/wiki/Installation) wiki page.
