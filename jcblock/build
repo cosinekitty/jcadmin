@@ -1,2 +1,2 @@
 #!/bin/bash
-gcc -pthread -Wall -o jcblock jcblockAT.c truncate.c radio.c -ldl -lm
+gcc -pthread -Wall -o ~/phone/jcblock jcblockAT.c truncate.c radio.c -ldl -lm
