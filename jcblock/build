@@ -1,0 +1,2 @@
+#!/bin/bash
+gcc -Wall -o jcblock jcblockAT.c truncate.c radio.c -ldl -lm
