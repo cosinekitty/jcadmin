@@ -322,7 +322,7 @@ int wait_for_response(fd)
   char buffer2[255];
   char bufRing[10];     // RING input buffer
   int nbytes;           // Number of bytes read
-  int i, j, k;
+  int i;
   struct tm *tmPtr;
   time_t currentTime;
   int currentYear;
@@ -1130,7 +1130,7 @@ bool write_blacklist( char *callstr )
   }
 
   // Get the date field from the caller ID.
-  strncpy( &blacklistEntry[20], &callstr[9], 6 );  
+  strncpy( &blacklistEntry[20], &callstr[9], 6 );
 
   // Add the source descriptor string ("KEY-* ENTRY").
   strncpy( &blacklistEntry[34], srcDesc, strlen(srcDesc) + 1 );
